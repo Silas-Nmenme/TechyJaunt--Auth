@@ -1,16 +1,20 @@
+
 const express = require('express');
-const { signUp, login, makeAdmin } = require('../controller/user.controller');
+const { signup, login, makeAdmin, forgotPassword, resetPassword, verifyOtp } = require('../controller/user.controller');
 const router = express.Router();
 
 
 
-router.post('/signup', signUp);
+router.post('/signup', signup);
 router.post('/login', login);
-router.patch('/make-admin/:userId', makeAdmin );
+router.patch('/make-admin/:userId', makeAdmin);
+router.post('/forgot-password', forgotPassword);
+router.post('/reset-password/:userId', resetPassword)
+router.post('/verify-otp', verifyOtp);
 
 
 
 
 
 
-module.exports = router;
+module.exports = router
