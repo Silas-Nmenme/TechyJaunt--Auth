@@ -5,7 +5,7 @@ const rentalSchema = new mongoose.Schema({
         ref: 'Car',
         required: true
     },
-    userId: {
+    rentedBy: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'User',
         required: true
@@ -21,6 +21,10 @@ const rentalSchema = new mongoose.Schema({
     totalPrice: {
         type: Number,
         required: true
+    },
+    isRented: {
+        type: Boolean,
+        default: false
     },
     status: {
         type: String,
