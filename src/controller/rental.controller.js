@@ -4,6 +4,7 @@ const Car = require("../models/car.schema");
 exports.rentCar = async (req, res) => {
     const { carId } = req.params;
     const userId = req.user.id;
+    const { startDate, endDate, totalPrice } = req.body;
 
     try {
         // Find the car by ID
@@ -20,6 +21,10 @@ exports.rentCar = async (req, res) => {
         // update the car's rental status
         car.isRented = true;
         car.rentedBy = userId;
+        car.startDate = startDate;
+        car.endDate = endDate;
+        car.totalPrice = totalPrice;
+        car.status = "pending";
         await car.save();
 
         return res.status(200).json({ message: "Car rented successfully", car });
