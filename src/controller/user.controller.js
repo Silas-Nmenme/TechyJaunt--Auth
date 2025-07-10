@@ -1,6 +1,7 @@
 const User = require("../models/user.schema");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
+const { v4: uuidv4 } = require("uuid");
 const { sendEmail } = require("../config/email");
 const saltRounds = 10;
 
@@ -26,22 +27,34 @@ const signup = async (req, res) => {
     const hashedPassword = await bcrypt.hash(password, saltRounds);
 
     const token = await jwt.sign({email: email}, process.env.JWT_SECRET, {expiresIn: process.env.JWT_EXPIRATION});
+    
+    //Generate Email Token
+    const emailToken = uuidv4();
 
     // Create new user
     const newUser = new User({
       name,
       email,
       password: hashedPassword,
-      token: token
+      token: token,
+      emailToken: emailToken,
     });
     await newUser.save();
      
 //Send Email
-await sendEmail (
-  email, 
-  "Welcome to our Car Rental Service", 
-  'Hello ${name},\n\nThank you for signing up! Your account has been created successfully.\n\nBest regards,\nYour Service Team'
+await sendEmail(
+  email,
+  "Welcome to our Car Rental Service",
+  `Hello ${name},
+
+Thank you for signing up! Your account has been created successfully. 
+
+Please verify your email using this token: ${emailToken}
+
+Best regards,  
+Your Service Team`
 );
+
 
     return res
       .status(201)
@@ -51,6 +64,27 @@ await sendEmail (
     return res.status(500).json({ message: "Internal Server Error" });
   }
 };
+
+const verifyEmail = async (req, res) => {
+  const {token} = req.params.token;
+  if(!token){
+    return res.status(400).json({message: "No Token"})
+    }
+      try{
+        const user = await User.findOne({emailToken: token})
+        if(!user){
+          return res.status(404).json({message: "User With this token doesn't Exist"})
+        }
+        user.isVerified = true;
+        user.emailToken = null;
+        await user.save();
+        return res.status(200).json({message: "User Verified Successfully", user})
+    } catch(err){
+      console.log(err)
+      return res.status(500).json({message: "Internal Server Error"});
+  }
+};
+
 
 const login = async (req, res) => {
   const { email, password } = req.body;
@@ -63,6 +97,9 @@ const login = async (req, res) => {
     const user = await User.findOne({ email });
     if (!user) {
       return res.status(404).json({ message: "User not found" });
+    }
+    if(!user.isVerified){
+      return res.status(401).json({message: "Please Verify Your Email"})
     }
     // Compare password
     const isPasswordValid = await bcrypt.compare(password, user.password);
@@ -77,7 +114,16 @@ const login = async (req, res) => {
       expiresIn: process.env.JWT_EXPIRATION,
     });
 
-await sendEmail(email, "Login notification", 'Hello ${user.name},\n\nYou have succcessfully logged in to your account.\n\nBest regards,\nYour Service Team');
+await sendEmail(
+  email,
+  "Login Notification",
+  `Hello ${user.name},
+
+You have successfully logged in to your account.
+
+Best regards,  
+Your Service Team`
+);
 
     return res
       .status(200)
@@ -191,5 +237,6 @@ module.exports = {
   makeAdmin,
   forgotPassword,
   verifyOtp,
-  resetPassword
+  resetPassword,
+  verifyEmail,
 };
