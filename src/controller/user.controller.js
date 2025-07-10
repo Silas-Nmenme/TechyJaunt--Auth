@@ -61,10 +61,11 @@ const signup = async (req, res) => {
 };
 
 const verifyEmail = async (req, res) => {
-  const {token} = req.params.token;
-  if(!token) {
-    return res.status(400).json({ message: "No Token" })
-    }
+  const token = req.params.token;
+  console.log(req.params)
+  if (!token) {
+    return res.status(400).json({ message: "No Token" });
+  }
       try{
         const user = await User.findOne({emailToken: token})
         if(!user){
