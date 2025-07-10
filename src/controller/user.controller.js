@@ -2,7 +2,8 @@ const User = require("../models/user.schema");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const { v4: uuidv4 } = require("uuid");
-const { sendEmail } = require("../config/email");
+const { sendEmail, sendTemplateEmail } = require("../config/email");
+const emailTemplates = require("../../templates/emailTemplates");
 const saltRounds = 10;
 
 const signup = async (req, res) => {
@@ -41,20 +42,14 @@ const signup = async (req, res) => {
     });
     await newUser.save();
      
-//Send Email
-await sendEmail(
-  email,
-  "Welcome to our Car Rental Service",
-  `Hello ${name},
-
-Thank you for signing up! Your account has been created successfully. 
-
-Please verify your email using this token: ${emailToken}
-
-Best regards,  
-Your Service Team`
-);
-
+// Send Welcome Email with Template
+    const welcomeTemplate = emailTemplates.welcomeTemplate(name, emailToken);
+    await sendTemplateEmail(
+      email,
+      welcomeTemplate.subject,
+      welcomeTemplate.html,
+      welcomeTemplate.text
+    );
 
     return res
       .status(201)
@@ -67,8 +62,8 @@ Your Service Team`
 
 const verifyEmail = async (req, res) => {
   const {token} = req.params.token;
-  if(!token){
-    return res.status(400).json({message: "No Token"})
+  if(!token) {
+    return res.status(400).json({ message: "No Token" })
     }
       try{
         const user = await User.findOne({emailToken: token})
@@ -78,6 +73,16 @@ const verifyEmail = async (req, res) => {
         user.isVerified = true;
         user.emailToken = null;
         await user.save();
+
+          // Send email verification success notification
+    const successTemplate = emailTemplates.emailVerificationSuccessTemplate(user.name);
+    await sendTemplateEmail(
+      user.email,
+      successTemplate.subject,
+      successTemplate.html,
+      successTemplate.text
+    );
+
         return res.status(200).json({message: "User Verified Successfully", user})
     } catch(err){
       console.log(err)
@@ -114,16 +119,15 @@ const login = async (req, res) => {
       expiresIn: process.env.JWT_EXPIRATION,
     });
 
-await sendEmail(
-  email,
-  "Login Notification",
-  `Hello ${user.name},
-
-You have successfully logged in to your account.
-
-Best regards,  
-Your Service Team`
-);
+// Send login notification with template
+    const loginTime = new Date().toLocaleString();
+    const loginTemplate = emailTemplates.loginNotificationTemplate(user.name, loginTime);
+    await sendTemplateEmail(
+      email,
+      loginTemplate.subject,
+      loginTemplate.html,
+      loginTemplate.text
+    );
 
     return res
       .status(200)
@@ -167,6 +171,15 @@ const forgotPassword = async (req, res) => {
 
     user.otp = otp;
     await user.save();  
+
+       // Send OTP email with template
+    const otpTemplate = emailTemplates.forgotPasswordTemplate(user.name, otp);
+    await sendTemplateEmail(
+      email,
+      otpTemplate.subject,
+      otpTemplate.html,
+      otpTemplate.text
+    );
 
     // Here you would typically send the reset token via email
     return res.status(200).json({
@@ -224,6 +237,15 @@ const resetPassword = async (req, res) => {
     user.otpVerified = false; // Reset OTP verification status
     await user.save();
     
+      // Send password reset confirmation email
+    const confirmationTemplate = emailTemplates.passwordResetConfirmationTemplate(user.name);
+    await sendTemplateEmail(
+      user.email,
+      confirmationTemplate.subject,
+      confirmationTemplate.html,
+      confirmationTemplate.text
+    );
+
     return res.status(200).json({ message: "Password reset successfully" });
   } catch (error) {
     console.error("Error resetting password:", error);
