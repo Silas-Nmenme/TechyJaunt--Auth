@@ -1,6 +1,7 @@
 const User = require("../models/user.schema");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
+const { sendEmail } = require("../config/email");
 const saltRounds = 10;
 
 const signup = async (req, res) => {
@@ -35,6 +36,13 @@ const signup = async (req, res) => {
     });
     await newUser.save();
      
+//Send Email
+await sendEmail (
+  email, 
+  "Welcome to our Car Rental Service", 
+  'Hello ${name},\n\nThank you for signing up! Your account has been created successfully.\n\nBest regards,\nYour Service Team'
+);
+
     return res
       .status(201)
       .json({ message: "User Created Succesfully", newUser });
@@ -68,6 +76,9 @@ const login = async (req, res) => {
     const token = await jwt.sign(payload, process.env.JWT_SECRET, {
       expiresIn: process.env.JWT_EXPIRATION,
     });
+
+await sendEmail(email, "Login notification", 'Hello ${user.name},\n\nYou have succcessfully logged in to your account.\n\nBest regards,\nYour Service Team');
+
     return res
       .status(200)
       .json({ message: "User Logged In Successfully", token });
