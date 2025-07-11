@@ -1,5 +1,5 @@
 const express = require('express');
-const { signup, login, makeAdmin, forgotPassword, resetPassword, verifyOtp, verifyEmail } = require('../controller/user.controller');
+const { signup, login, makeAdmin, forgotPassword, resetPassword, verifyOtp, verifyEmail, initiateGoogleAuth, handleGoogleCallback, unlinkGoogle, setPasswordForGoogleUser } = require('../controller/user.controller');
 const router = express.Router();
 
 
@@ -13,6 +13,11 @@ router.post('/verify-otp', verifyOtp);
 router.post('/verify-email/:token', verifyEmail);
 
 
+// Server-side Google OAuth routes
+router.get('/google', initiateGoogleAuth);
+router.get('/google/callback', handleGoogleCallback);
+router.delete('/unlink-google/:userId', unlinkGoogle);
+router.post('/set-password/:userId', setPasswordForGoogleUser);
 
 
 
