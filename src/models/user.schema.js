@@ -12,7 +12,7 @@ const userSchema = new mongoose.Schema({
         unique: true,
         trim: true
     },
-     password: {
+    password: {
         type: String,
         required: function() {
             return !this.googleId; // Password not required if using Google OAuth
@@ -31,13 +31,27 @@ const userSchema = new mongoose.Schema({
     avatar: {
         type: String // For storing user's profile picture URL
     },
+    profilePicture: {
+        url: {
+            type: String,
+            default: null
+        },
+        publicId: {
+            type: String,
+            default: null
+        },
+        uploadedAt: {
+            type: Date,
+            default: null
+        }
+    },
     isAdmin: {
         type: Boolean,
         default: false
     },
     isVerified: {
         type: Boolean,
-        deafult: false
+        default: false
     },
     token: {
         type: String

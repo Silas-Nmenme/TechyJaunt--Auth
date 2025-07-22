@@ -6,8 +6,7 @@ const { sendEmail, sendTemplateEmail } = require("../config/email");
 const emailTemplates = require("../../templates/emailTemplates");
 const { OAuth2Client } = require('google-auth-library');
 const { google } = require('googleapis');
-
-
+const { upload, deleteImage, extractPublicId } = require('../config/cloudinary');
 // Initialize Google OAuth client
 const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
@@ -35,9 +34,11 @@ const signup = async (req, res) => {
     // Hash the password
     const hashedPassword = await bcrypt.hash(password, saltRounds);
 
-    const token = await jwt.sign({email: email}, process.env.JWT_SECRET, {expiresIn: process.env.JWT_EXPIRATION});
-    
-    //Generate Email Token
+    const token = await jwt.sign({ email: email }, process.env.JWT_SECRET, {
+      expiresIn: process.env.JWT_EXPIRATION,
+    });
+
+    // Generate Email Token
     const emailToken = uuidv4();
 
     // Create new user
@@ -49,8 +50,8 @@ const signup = async (req, res) => {
       emailToken: emailToken,
     });
     await newUser.save();
-     
-// Send Welcome Email with Template
+
+    // Send Welcome Email with Template
     const welcomeTemplate = emailTemplates.welcomeTemplate(name, emailToken);
     await sendTemplateEmail(
       email,
@@ -70,20 +71,19 @@ const signup = async (req, res) => {
 
 const verifyEmail = async (req, res) => {
   const token = req.params.token;
-  console.log(req.params)
   if (!token) {
     return res.status(400).json({ message: "No Token" });
   }
-      try{
-        const user = await User.findOne({emailToken: token})
-        if(!user){
-          return res.status(404).json({message: "User With this token doesn't Exist"})
-        }
-        user.isVerified = true;
-        user.emailToken = null;
-        await user.save();
+  try {
+    const user = await User.findOne({emailToken: token})
+    if(!user){
+      return res.status(404).json({messsage: "User With this token doesn't Exist"})
+    }
+    user.isVerified = true;
+    user.emailToken = null;
+    await user.save();
 
-          // Send email verification success notification
+    // Send email verification success notification
     const successTemplate = emailTemplates.emailVerificationSuccessTemplate(user.name);
     await sendTemplateEmail(
       user.email,
@@ -92,13 +92,12 @@ const verifyEmail = async (req, res) => {
       successTemplate.text
     );
 
-        return res.status(200).json({message: "User Verified Successfully", user})
-    } catch(err){
-      console.log(err)
-      return res.status(500).json({message: "Internal Server Error"});
+    return res.status(200).json({message: "User Verified Successfully", user})
+  } catch (err) {
+    console.log(err);
+    return res.status(500).json({ message: "Internal Server Error" });
   }
 };
-
 
 const login = async (req, res) => {
   const { email, password } = req.body;
@@ -112,8 +111,8 @@ const login = async (req, res) => {
     if (!user) {
       return res.status(404).json({ message: "User not found" });
     }
-    if(!user.isVerified){
-      return res.status(401).json({message: "Please Verify Your Email"})
+    if (!user.isVerified) {
+      return res.status(401).json({ message: "Please Verify Your Email" });
     }
     // Compare password
     const isPasswordValid = await bcrypt.compare(password, user.password);
@@ -121,14 +120,14 @@ const login = async (req, res) => {
       return res.status(401).json({ message: "Invalid credentials" });
     }
     const payload = {
-        id: user._id,
-        email: user.email,
-    }
+      id: user._id,
+      email: user.email,
+    };
     const token = await jwt.sign(payload, process.env.JWT_SECRET, {
       expiresIn: process.env.JWT_EXPIRATION,
     });
 
-// Send login notification with template
+    // Send login notification with template
     const loginTime = new Date().toLocaleString();
     const loginTemplate = emailTemplates.loginNotificationTemplate(user.name, loginTime);
     await sendTemplateEmail(
@@ -179,9 +178,9 @@ const forgotPassword = async (req, res) => {
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
 
     user.otp = otp;
-    await user.save();  
+    await user.save();
 
-       // Send OTP email with template
+    // Send OTP email with template
     const otpTemplate = emailTemplates.forgotPasswordTemplate(user.name, otp);
     await sendTemplateEmail(
       email,
@@ -190,20 +189,18 @@ const forgotPassword = async (req, res) => {
       otpTemplate.text
     );
 
-    // Here you would typically send the reset token via email
     return res.status(200).json({
-      message: "Password reset token generated",
-      otp,
+      message: "Password reset OTP sent to your email",
     });
   } catch (error) {
     console.error("Error generating reset token:", error);
     return res.status(500).json({ message: "Internal Server Error" });
   }
-}
+};
 
 const verifyOtp = async (req, res) => {
-  const {otp} = req.body;
-  try{
+  const { otp } = req.body;
+  try {
     const user = await User.findOne({ otp: otp });
     if (!user) {
       return res.status(404).json({ message: "Invalid OTP" });
@@ -213,40 +210,46 @@ const verifyOtp = async (req, res) => {
     await user.save();
 
     // OTP is valid, you can proceed with password reset or other actions
-    return res.status(200).json({ message: "OTP verified successfully", userId: user._id });
-  }catch(e) {
+    return res
+      .status(200)
+      .json({ message: "OTP verified successfully", userId: user._id });
+  } catch (e) {
     console.error("Error verifying OTP:", e);
     return res.status(500).json({ message: "Internal Server Error" });
   }
-}
+};
 
 const resetPassword = async (req, res) => {
   const { confirmPassword, newPassword } = req.body;
   const { userId } = req.params;
-  console.log(userId)
+  console.log(userId);
   // Validate input
   if (!userId || !newPassword) {
-    return res.status(400).json({ message: "User ID and new password are required" });
+    return res
+      .status(400)
+      .json({ message: "User ID and new password are required" });
   }
   if (newPassword !== confirmPassword) {
     return res.status(400).json({ message: "Passwords do not match" });
   }
 
   try {
-    const user = await User.findById({_id: userId});
+    const user = await User.findById({ _id: userId });
     if (!user) {
       return res.status(404).json({ message: "User not found" });
     }
-    if(user.otpVerified !== true) { 
-      return res.status(403).json({ message: "OTP not verified, Please Verify Your Otp" });
+    if (user.otpVerified !== true) {
+      return res
+        .status(403)
+        .json({ message: "OTP not verified, Please Verify Your Otp" });
     }
     // Hash the new password
     const hashedPassword = await bcrypt.hash(newPassword, saltRounds);
     user.password = hashedPassword;
     user.otpVerified = false; // Reset OTP verification status
     await user.save();
-    
-      // Send password reset confirmation email
+
+    // Send password reset confirmation email
     const confirmationTemplate = emailTemplates.passwordResetConfirmationTemplate(user.name);
     await sendTemplateEmail(
       user.email,
@@ -406,11 +409,11 @@ const handleGoogleCallback = async (req, res) => {
     }
 
     // Option 1: Redirect to frontend with token in URL params (not recommended for production)
-    // const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3001';
+    // const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:4500';
     // return res.redirect(`${frontendUrl}/auth/success?token=${token}`);
 
     // Option 2: Redirect to frontend with success page that fetches token
-    // const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3001';
+    // const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:4500';
     // Store token temporarily in session or cache with short expiration
     // return res.redirect(`${frontendUrl}/auth/success?authId=${temporaryId}`);
 
@@ -519,6 +522,195 @@ const setPasswordForGoogleUser = async (req, res) => {
   }
 };
 
+// Upload Profile Picture
+const uploadProfilePicture = async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ message: "No image file provided" });
+    }
+
+    const userId = req.user.id; 
+    const user = await User.findById(userId);
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    // Delete old profile picture if exists
+    if (user.profilePicture?.publicId) {
+      try {
+        await deleteImage(user.profilePicture.publicId);
+      } catch (error) {
+        console.error('Error deleting old profile picture:', error);
+        // Continue with upload even if deletion fails
+      }
+    }
+
+    // Update user with new profile picture
+    user.profilePicture = {
+      url: req.file.path,
+      publicId: req.file.filename,
+      uploadedAt: new Date()
+    };
+
+    // Also update the avatar field for backward compatibility
+    user.avatar = req.file.path;
+
+    await user.save();
+
+    return res.status(200).json({
+      message: "Profile picture uploaded successfully",
+      profilePicture: {
+        url: user.profilePicture.url,
+        uploadedAt: user.profilePicture.uploadedAt
+      }
+    });
+
+  } catch (error) {
+    console.error("Error uploading profile picture:", error);
+    return res.status(500).json({ message: "Internal Server Error" });
+  }
+};
+
+// Get User Profile (including profile picture)
+const getUserProfile = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const user = await User.findById(userId).select('-password -otp -emailToken -token');
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    return res.status(200).json({
+      message: "User profile retrieved successfully",
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        isAdmin: user.isAdmin,
+        isVerified: user.isVerified,
+        provider: user.provider,
+        avatar: user.avatar,
+        profilePicture: user.profilePicture,
+        createdAt: user.createdAt,
+        updatedAt: user.updatedAt
+      }
+    });
+
+  } catch (error) {
+    console.error("Error getting user profile:", error);
+    return res.status(500).json({ message: "Internal Server Error" });
+  }
+};
+
+// Delete Profile Picture
+const deleteProfilePicture = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const user = await User.findById(userId);
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    if (!user.profilePicture?.publicId) {
+      return res.status(400).json({ message: "No profile picture to delete" });
+    }
+
+    // Delete from Cloudinary
+    try {
+      await deleteImage(user.profilePicture.publicId);
+    } catch (error) {
+      console.error('Error deleting image from Cloudinary:', error);
+      // Continue with database update even if Cloudinary deletion fails
+    }
+
+    // Remove profile picture from user
+    user.profilePicture = {
+      url: null,
+      publicId: null,
+      uploadedAt: null
+    };
+    user.avatar = null;
+
+    await user.save();
+
+    return res.status(200).json({
+      message: "Profile picture deleted successfully"
+    });
+
+  } catch (error) {
+    console.error("Error deleting profile picture:", error);
+    return res.status(500).json({ message: "Internal Server Error" });
+  }
+};
+
+// Update User Profile (name, email, etc.)
+const updateProfile = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const { name, email } = req.body;
+
+    if (!name && !email) {
+      return res.status(400).json({ message: "At least one field (name or email) is required" });
+    }
+
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    // Check if email is being changed and if it already exists
+    if (email && email !== user.email) {
+      const existingUser = await User.findOne({ email });
+      if (existingUser) {
+        return res.status(400).json({ message: "Email already exists" });
+      }
+      
+      // If email is changed, mark as unverified
+      user.email = email;
+      user.isVerified = false;
+      
+      // Generate new email token for verification
+      const emailToken = uuidv4();
+      user.emailToken = emailToken;
+      
+      // Send verification email
+      const welcomeTemplate = emailTemplates.welcomeTemplate(name || user.name, emailToken);
+      await sendTemplateEmail(
+        email,
+        welcomeTemplate.subject,
+        welcomeTemplate.html,
+        welcomeTemplate.text
+      );
+    }
+
+    if (name) {
+      user.name = name;
+    }
+
+    await user.save();
+
+    return res.status(200).json({
+      message: email && email !== user.email 
+        ? "Profile updated successfully. Please verify your new email address." 
+        : "Profile updated successfully",
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        isVerified: user.isVerified,
+        profilePicture: user.profilePicture
+      }
+    });
+
+  } catch (error) {
+    console.error("Error updating profile:", error);
+    return res.status(500).json({ message: "Internal Server Error" });
+  }
+};
+
 module.exports = {
   signup,
   login,
@@ -531,4 +723,8 @@ module.exports = {
   handleGoogleCallback,
   unlinkGoogle,
   setPasswordForGoogleUser,
+  uploadProfilePicture,
+  getUserProfile,
+  deleteProfilePicture,
+  updateProfile,
 };
