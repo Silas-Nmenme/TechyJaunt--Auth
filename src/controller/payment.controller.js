@@ -7,6 +7,11 @@ const flw = new Flutterwave(process.env.FLW_PUBLIC_KEY, process.env.FLW_SECRET_K
 
 exports.makePayment = async (req, res) => {
   const carId = req.params.carId;
+
+   if (!req.user || !req.user._id) {
+    return res.status(401).json({ message: 'User authentication failed.' });
+  }
+
   const userId = req.user._id;
   const { email, phone_number } = req.body; // must be provided in request
   
