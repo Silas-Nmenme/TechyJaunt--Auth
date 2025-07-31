@@ -1,7 +1,8 @@
 const Car = require("../models/car.schema");
 const Payment = require("../models/payment.model");
+const sendEmail = require("../utils/sendEmail.js");
 
-// 🟢 Standard rental (without payment check)
+// Manual rental (no payment check)
 exports.rentCar = async (req, res) => {
   const userId = req.user._id;
   const { carId } = req.params;
@@ -9,9 +10,8 @@ exports.rentCar = async (req, res) => {
 
   try {
     const car = await Car.findById(carId);
-    if (!car) return res.status(404).json({ message: "Car not found" });
-
-    if (car.isRented) return res.status(400).json({ message: "Car is already rented" });
+    if (!car) return res.status(404).json({ message: "Car not found." });
+    if (car.isRented) return res.status(400).json({ message: "Car is already rented." });
 
     car.isRented = true;
     car.rentedBy = userId;
@@ -29,44 +29,57 @@ exports.rentCar = async (req, res) => {
   }
 };
 
-// 🟢 Rental with verified Flutterwave payment
+// Rental with verified Flutterwave payment
 exports.rentCarWithPayment = async (req, res) => {
   const userId = req.user._id;
   const { carId } = req.params;
   const { paymentId } = req.body;
 
   try {
-    // Check for a valid successful payment
     const payment = await Payment.findOne({
       _id: paymentId,
       user: userId,
       car: carId,
-      status: "paid", // or "successful" if that's your DB field
+      status: "paid",
     });
 
     if (!payment) {
-      return res.status(400).json({ message: "Valid payment required to rent this car" });
+      return res.status(400).json({ message: "Valid payment required to rent this car." });
     }
 
     const car = await Car.findById(carId);
-    if (!car) return res.status(404).json({ message: "Car not found" });
+    if (!car) return res.status(404).json({ message: "Car not found." });
+    if (car.isRented) return res.status(400).json({ message: "Car is already rented." });
 
-    if (car.isRented) {
-      return res.status(400).json({ message: "Car is already rented" });
-    }
-
-    // Assign car rental based on payment
     car.isRented = true;
     car.rentedBy = userId;
     car.startDate = payment.rentalStartDate || new Date(); // fallback
     car.endDate = payment.rentalEndDate || null;
     car.totalPrice = payment.amount;
-    car.status = "approved"; // Payment-based rental is auto-approved
+    car.status = "approved";
 
     await car.save();
 
+    // Send confirmation email
+    const userEmail = req.user.email || "no-reply@example.com";
+    const fullName = req.user.fullName || 'User';
+    const htmlContent = `
+      <h2>Rental Confirmed</h2>
+      <p>Hi ${fullName},</p>
+      <p>Your rental for <strong>${car.name}</strong> has been successfully confirmed.</p>
+      <ul>
+        <li>Rental Start: ${car.startDate?.toDateString()}</li>
+        <li>Rental End: ${car.endDate?.toDateString() || 'Not specified'}</li>
+        <li>Total Price: ₦${car.totalPrice}</li>
+        <li>Transaction ID: ${payment.flutterwaveTransactionId || 'N/A'}</li>
+      </ul>
+      <p>Thank you for choosing TechyJaunt Car Rentals!</p>
+    `;
+
+    await sendEmail(userEmail, 'Rental Confirmation - TechyJaunt', htmlContent);
+
     return res.status(200).json({
-      message: "Car rented successfully with payment",
+      message: "Car rented successfully with payment.",
       car,
       payment: {
         id: payment._id,
