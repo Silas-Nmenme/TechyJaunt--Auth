@@ -4,7 +4,7 @@ const { makePayment, verifyPayment, handleFlutterwaveWebhook } = require('../con
 const { isAuthenticated } = require('../middlewares/isAuth');
 
 router.post('/pay/:carId', isAuthenticated, makePayment);
-router.get('/verify', isAuthenticated, verifyPayment);
+router.get('/callback', isAuthenticated, verifyPayment);
 
 router.post('/webhook/flutterwave', express.raw({ type: 'application/json' }), handleFlutterwaveWebhook);
 

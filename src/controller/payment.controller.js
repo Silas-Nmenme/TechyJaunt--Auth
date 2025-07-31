@@ -82,11 +82,18 @@ exports.makePayment = async (req, res) => {
 exports.verifyPayment = async (req, res) => {
   const { transaction_id } = req.query;
 
+  // Check if transaction_id exists
+  if (!transaction_id) {
+    return res.status(400).json({ message: 'Missing transaction_id in query.' });
+  }
+
   try {
+    // Verify transaction via Flutterwave
     const response = await flw.Transaction.verify({ id: transaction_id });
 
     if (response.data.status === 'successful') {
       const existing = await Payment.findOne({ tx_ref: response.data.tx_ref });
+      const isTest = response.data.amount <= 10;
 
       if (!existing) {
         await Payment.create({
@@ -99,12 +106,14 @@ exports.verifyPayment = async (req, res) => {
           currency: response.data.currency,
           rentalStartDate: response.data.meta?.startDate || null,
           rentalEndDate: response.data.meta?.endDate || null,
-          isTest: response.data.amount <= 10
+          isTest: isTest
         });
 
+        // Fetch user and car for receipt
         const user = await User.findById(response.data.meta?.userId);
         const car = await Car.findById(response.data.meta?.carId);
 
+        // Prepare and send email receipt
         const templatePath = path.join(__dirname, '../emailTemplates/receipt.html');
         let htmlTemplate = fs.readFileSync(templatePath, 'utf-8');
 
@@ -132,7 +141,7 @@ exports.verifyPayment = async (req, res) => {
         await transporter.sendMail({
           from: `"Techy Car Rentals" <${process.env.MAIL_USER}>`,
           to: user.email,
-          subject: response.data.amount <= 10 ? '[TEST] Car Rental Payment' : 'Car Rental Payment Receipt',
+          subject: isTest ? '[TEST] Car Rental Payment Receipt' : 'Car Rental Payment Receipt',
           html: htmlTemplate,
         });
       }
@@ -142,10 +151,14 @@ exports.verifyPayment = async (req, res) => {
       return res.redirect('/failed');
     }
   } catch (err) {
-    console.error('Payment verification failed:', err);
-    return res.status(500).json({ message: 'Verification failed.', error: err.message });
+    console.error('Payment verification failed:', err?.response?.data || err.message);
+    return res.status(500).json({
+      message: 'Verification failed.',
+      error: err?.response?.data?.message || err.message
+    });
   }
 };
+
 
 // HANDLE FLUTTERWAVE WEBHOOK
 exports.handleFlutterwaveWebhook = async (req, res) => {
