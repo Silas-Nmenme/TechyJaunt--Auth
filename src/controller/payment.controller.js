@@ -49,7 +49,9 @@ exports.makePayment = async (req, res) => {
       }
     };
 
-    const response = await flw.PaymentInitiate(payload);
+    const response = await flw.PaymentInitiation.initialize(payload);
+    console.log(typeof flw.PaymentInitiation?.initialize); // should return 'function'
+
 
     if (response.status === 'success') {
       res.status(200).json({ redirectLink: response.data.link });
