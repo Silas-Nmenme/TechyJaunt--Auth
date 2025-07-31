@@ -10,6 +10,7 @@ const paymentSchema = new mongoose.Schema({
   status: { type: String, enum: ['paid', 'pending', 'failed'], default: 'pending' },
   rentalStartDate: { type: Date },
   rentalEndDate: { type: Date },
+  isTest: { type: Boolean, default: false }
 }, { timestamps: true });
 
 module.exports = mongoose.model('Payment', paymentSchema);
