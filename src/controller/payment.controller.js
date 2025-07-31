@@ -25,6 +25,9 @@ exports.makePayment = async (req, res) => {
     const car = await Car.findById(carId);
     if (!car) return res.status(404).json({ message: 'Car not found.' });
 
+    //Temporary: set car price to N10 for testing
+    car.price = 10; 
+
     const tx_ref = `tx-${Date.now()}-${userId}`;
 
     const payload = {
@@ -46,7 +49,7 @@ exports.makePayment = async (req, res) => {
       customizations: {
         title: 'Car Rental Payment',
         description: `Payment for renting ${car.make} ${car.model}`,
-        logo: 'https://your-logo-url.com/logo.png',
+        logo: '../logo/car logo.webp',
       }
     };
 
