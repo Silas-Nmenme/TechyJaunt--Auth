@@ -1,8 +1,7 @@
 const Flutterwave = require('flutterwave-node-v3');
-const crypto = require('crypto');
 const Payment = require('../models/payment.model.js');
 const Car = require('../models/car.schema.js');
-const User = require('../models/user.schema.js'); // if needed for future enhancements
+
 
 const flw = new Flutterwave(process.env.FLW_PUBLIC_KEY, process.env.FLW_SECRET_KEY);
 
@@ -10,7 +9,8 @@ const flw = new Flutterwave(process.env.FLW_PUBLIC_KEY, process.env.FLW_SECRET_K
 exports.makePayment = async (req, res) => {
   const carId = req.params.carId;
 
-  if (!req.user || !req.user._id) {
+  // Make sure the user is authenticated and has email
+  if (!req.user || !req.user._id || !req.user.email) {
     return res.status(401).json({ message: 'User authentication failed.' });
   }
 
@@ -31,7 +31,7 @@ exports.makePayment = async (req, res) => {
       customer: {
         email,
         phonenumber: phone_number,
-        name: req.user.fullName || req.user.email || 'Customer',
+        name: req.user.fullName || "Customer"
       },
       meta: {
         carId,
