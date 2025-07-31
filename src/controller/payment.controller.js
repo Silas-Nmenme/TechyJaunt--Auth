@@ -1,7 +1,11 @@
 const Flutterwave = require('flutterwave-node-v3');
 const Payment = require('../models/payment.model.js');
 const Car = require('../models/car.schema.js');
-
+const User = require('../models/user.schema.js');
+const crypto = require('crypto');
+const fs = require('fs');
+const path = require('path');
+const nodemailer = require('nodemailer');
 
 const flw = new Flutterwave(process.env.FLW_PUBLIC_KEY, process.env.FLW_SECRET_KEY);
 
@@ -9,7 +13,6 @@ const flw = new Flutterwave(process.env.FLW_PUBLIC_KEY, process.env.FLW_SECRET_K
 exports.makePayment = async (req, res) => {
   const carId = req.params.carId;
 
-  // Make sure the user is authenticated and has email
   if (!req.user || !req.user._id || !req.user.email) {
     return res.status(401).json({ message: 'User authentication failed.' });
   }
@@ -27,24 +30,26 @@ exports.makePayment = async (req, res) => {
       tx_ref,
       amount: car.price,
       currency: 'NGN',
-      redirect_url: 'https://techyjaunt-auth-go43.onrender.com/api/payment/verify',
+      redirect_url: `${process.env.BASE_URL}/api/payment/verify`,
       customer: {
         email,
         phonenumber: phone_number,
-        name: req.user.fullName || "Customer"
+        name: req.user.name || "Customer"
       },
       meta: {
-        carId,
+        carId: carId.toString(),
         userId: userId.toString(),
+        startDate: car.startDate,
+        endDate: car.endDate
       },
       customizations: {
         title: 'Car Rental Payment',
-        description: `Payment for renting ${car.name}`,
+        description: `Payment for renting ${car.make} ${car.model}`,
         logo: 'https://your-logo-url.com/logo.png',
-      },
+      }
     };
 
-   const response = await flw.PaymentInitiation.create(payload);
+    const response = await flw.PaymentInitiation.pay(payload);
 
     if (response.status === 'success') {
       res.status(200).json({ redirectLink: response.data.link });
@@ -57,7 +62,7 @@ exports.makePayment = async (req, res) => {
   }
 };
 
-// VERIFY PAYMENT AFTER REDIRECT
+// VERIFY PAYMENT
 exports.verifyPayment = async (req, res) => {
   const { transaction_id } = req.query;
 
@@ -79,6 +84,41 @@ exports.verifyPayment = async (req, res) => {
           rentalStartDate: response.data.meta?.startDate || null,
           rentalEndDate: response.data.meta?.endDate || null,
         });
+
+        const user = await User.findById(response.data.meta?.userId);
+        const car = await Car.findById(response.data.meta?.carId);
+
+        // Load and customize email template
+        const templatePath = path.join(__dirname, '../emailTemplates/receipt.html');
+        let htmlTemplate = fs.readFileSync(templatePath, 'utf-8');
+
+        htmlTemplate = htmlTemplate
+          .replace('{{customer_name}}', user.name)
+          .replace('{{customer_email}}', user.email)
+          .replace('{{customer_phone}}', 'N/A')
+          .replace('{{car_make}}', car.make)
+          .replace('{{car_model}}', car.model)
+          .replace('{{car_year}}', car.year)
+          .replace('{{start_date}}', formatDate(car.startDate))
+          .replace('{{end_date}}', formatDate(car.endDate))
+          .replace('{{amount}}', response.data.amount)
+          .replace('{{tx_ref}}', response.data.tx_ref)
+          .replace('{{transaction_id}}', response.data.id);
+
+        const transporter = nodemailer.createTransport({
+          service: 'gmail',
+          auth: {
+            user: process.env.MAIL_USER,
+            pass: process.env.MAIL_PASS,
+          },
+        });
+
+        await transporter.sendMail({
+          from: `"Techy Rentals" <${process.env.MAIL_USER}>`,
+          to: user.email,
+          subject: 'Car Rental Payment Receipt',
+          html: htmlTemplate,
+        });
       }
 
       return res.redirect(`/success?tx_ref=${response.data.tx_ref}`);
@@ -94,17 +134,17 @@ exports.verifyPayment = async (req, res) => {
 // HANDLE FLUTTERWAVE WEBHOOK
 exports.handleFlutterwaveWebhook = async (req, res) => {
   const flutterwaveSignature = req.headers['verif-hash'];
+
   const hash = crypto
     .createHmac('sha256', process.env.FLW_WEBHOOK_SECRET)
-    .update(req.body)
+    .update(JSON.stringify(req.body))
     .digest('hex');
 
   if (!flutterwaveSignature || flutterwaveSignature !== hash) {
     return res.status(401).json({ message: 'Invalid or missing webhook signature.' });
   }
 
-  const event = JSON.parse(req.body.toString());
-  const { event: eventType, data } = event;
+  const { event: eventType, data } = req.body;
 
   if (eventType === 'charge.completed' && data.status === 'successful') {
     try {
@@ -133,3 +173,9 @@ exports.handleFlutterwaveWebhook = async (req, res) => {
 
   return res.status(200).json({ message: 'Webhook received.' });
 };
+
+const formatDate = (date) => new Date(date).toLocaleDateString('en-NG', {
+  year: 'numeric',
+  month: 'long',
+  day: 'numeric',
+});
