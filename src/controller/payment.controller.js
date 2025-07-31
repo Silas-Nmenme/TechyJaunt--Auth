@@ -49,7 +49,7 @@ exports.makePayment = async (req, res) => {
       }
     };
 
-    const response = await flw.PaymentInitiation.pay(payload);
+    const response = await flw.PaymentInitiation.initialize(payload);
 
     if (response.status === 'success') {
       res.status(200).json({ redirectLink: response.data.link });
