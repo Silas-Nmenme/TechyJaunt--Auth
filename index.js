@@ -4,7 +4,7 @@ const morgan = require("morgan")
 const connectDB = require("./src/config/db")
 const userRouter = require("./src/routes/user.routes")
 const carRouter = require("./src/routes/car.routes")
-const paymentRouter = require("./src/routes/payments.routes.js")
+const paymentRouter = require("./src/routes/payment.routes.js")
 
 
 dotenv.config()
