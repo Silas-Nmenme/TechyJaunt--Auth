@@ -99,6 +99,7 @@ exports.verifyPayment = async (req, res) => {
           currency: response.data.currency,
           rentalStartDate: response.data.meta?.startDate || null,
           rentalEndDate: response.data.meta?.endDate || null,
+          isTest: response.data.amount <= 10
         });
 
         const user = await User.findById(response.data.meta?.userId);
@@ -129,9 +130,9 @@ exports.verifyPayment = async (req, res) => {
         });
 
         await transporter.sendMail({
-          from: `"Techy Rentals" <${process.env.MAIL_USER}>`,
+          from: `"Techy Car Rentals" <${process.env.MAIL_USER}>`,
           to: user.email,
-          subject: 'Car Rental Payment Receipt',
+          subject: response.data.amount <= 10 ? '[TEST] Car Rental Payment' : 'Car Rental Payment Receipt',
           html: htmlTemplate,
         });
       }
@@ -165,6 +166,7 @@ exports.handleFlutterwaveWebhook = async (req, res) => {
     try {
       const existing = await Payment.findOne({ tx_ref: data.tx_ref });
 
+      
       if (!existing) {
         await Payment.create({
           user: data.meta?.userId,
@@ -176,6 +178,7 @@ exports.handleFlutterwaveWebhook = async (req, res) => {
           status: 'paid',
           rentalStartDate: data.meta?.startDate || null,
           rentalEndDate: data.meta?.endDate || null,
+          isTest: data.amount <= 10
         });
       }
 
