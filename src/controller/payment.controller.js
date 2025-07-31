@@ -1,3 +1,4 @@
+const axios = require('axios');
 const Flutterwave = require('flutterwave-node-v3');
 const Payment = require('../models/payment.model.js');
 const Car = require('../models/car.schema.js');
@@ -49,18 +50,28 @@ exports.makePayment = async (req, res) => {
       }
     };
 
-    const response = await flw.PaymentInitiation.initialize(payload);
-    console.log(typeof flw.PaymentInitiation?.initialize); // should return 'function'
+    const response = await axios.post(
+      'https://api.flutterwave.com/v3/payments',
+      payload,
+      {
+        headers: {
+          Authorization: `Bearer ${process.env.FLW_SECRET_KEY}`,
+          'Content-Type': 'application/json'
+        }
+      }
+    );
 
-
-    if (response.status === 'success') {
-      res.status(200).json({ redirectLink: response.data.link });
+    if (response.data.status === 'success') {
+      res.status(200).json({ redirectLink: response.data.data.link });
     } else {
       res.status(500).json({ message: 'Payment initiation failed.' });
     }
   } catch (err) {
-    console.error('Flutterwave payment error:', err);
-    res.status(500).json({ message: 'Payment error.', error: err.message });
+    console.error('Flutterwave payment error:', err?.response?.data || err.message);
+    res.status(500).json({
+      message: 'Payment error.',
+      error: err?.response?.data?.message || err.message
+    });
   }
 };
 
