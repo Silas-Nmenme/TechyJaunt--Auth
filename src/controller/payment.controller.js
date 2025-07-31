@@ -49,7 +49,7 @@ exports.makePayment = async (req, res) => {
       }
     };
 
-    const response = await flw.PaymentInitiation.initialize(payload);
+    const response = await flw.PaymentInitiate(payload);
 
     if (response.status === 'success') {
       res.status(200).json({ redirectLink: response.data.link });
@@ -88,7 +88,6 @@ exports.verifyPayment = async (req, res) => {
         const user = await User.findById(response.data.meta?.userId);
         const car = await Car.findById(response.data.meta?.carId);
 
-        // Load and customize email template
         const templatePath = path.join(__dirname, '../emailTemplates/receipt.html');
         let htmlTemplate = fs.readFileSync(templatePath, 'utf-8');
 
