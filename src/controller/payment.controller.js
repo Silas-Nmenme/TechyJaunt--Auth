@@ -12,7 +12,7 @@ const client = twilio(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TO
 
 const flw = new Flutterwave(process.env.FLW_PUBLIC_KEY, process.env.FLW_SECRET_KEY);
 
-// INITIATE PAYMENT
+// Make payment
 exports.makePayment = async (req, res) => {
   const carId = req.params.carId;
 
@@ -27,8 +27,8 @@ exports.makePayment = async (req, res) => {
     const car = await Car.findById(carId);
     if (!car) return res.status(404).json({ message: 'Car not found.' });
 
-    //Temporary: set car price to N10 for testing
-    car.price = 10; 
+    // Temporary price for testing
+    car.price = 10;
 
     const tx_ref = `tx-${Date.now()}-${userId}`;
 
@@ -36,7 +36,7 @@ exports.makePayment = async (req, res) => {
       tx_ref,
       amount: car.price,
       currency: 'NGN',
-      redirect_url: `${process.env.BASE_URL}/api/payment/verify`,
+      redirect_url: `https://techyjaunt-auth-go43.onrender.com/api/payment/verify`, 
       customer: {
         email,
         phonenumber: phone_number,
