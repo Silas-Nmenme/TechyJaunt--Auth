@@ -7,6 +7,8 @@ const crypto = require('crypto');
 const fs = require('fs');
 const path = require('path');
 const nodemailer = require('nodemailer');
+const twilio = require('twilio');
+const client = twilio(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN);
 
 const flw = new Flutterwave(process.env.FLW_PUBLIC_KEY, process.env.FLW_SECRET_KEY);
 
@@ -106,7 +108,7 @@ exports.verifyPayment = async (req, res) => {
       return res.status(400).json({ message: 'Invalid payment metadata.' });
     }
 
-    // Check if payment already exists
+    // Store payment
     let payment = await Payment.findOne({ tx_ref: txRef });
     const isTest = response.data.amount <= 10;
 
@@ -125,7 +127,7 @@ exports.verifyPayment = async (req, res) => {
       });
     }
 
-    // Update car status
+    // Update car
     const car = await Car.findById(meta.carId);
     if (car && !car.isRented) {
       car.isRented = true;
@@ -145,7 +147,7 @@ exports.verifyPayment = async (req, res) => {
     htmlTemplate = htmlTemplate
       .replace('{{customer_name}}', user?.name || 'User')
       .replace('{{customer_email}}', user?.email || 'N/A')
-      .replace('{{customer_phone}}', 'N/A')
+      .replace('{{customer_phone}}', user?.phoneNumber || 'N/A')
       .replace('{{car_make}}', car?.make || '')
       .replace('{{car_model}}', car?.model || '')
       .replace('{{car_year}}', car?.year || '')
@@ -170,7 +172,23 @@ exports.verifyPayment = async (req, res) => {
       html: htmlTemplate,
     });
 
-    return res.redirect(`/success?tx_ref=${txRef}`);
+    // SMS confirmation (if user has phone number)
+    if (user?.phoneNumber) {
+      try {
+        await client.messages.create({
+          body: `Hi ${user.name}, your payment for renting ${car.make} ${car.model} was successful. Ref: ${txRef}`,
+          from: process.env.TWILIO_PHONE,
+          to: user.phoneNumber,
+        });
+      } catch (smsErr) {
+        console.error('SMS send failed:', smsErr.message);
+      }
+    }
+
+    // Show mobile-friendly HTML page
+    return res.sendFile(path.join(__dirname, '../public/success.html'));
+
+
   } catch (err) {
     console.error('Payment verification error:', err?.response?.data || err.message);
     return res.status(500).json({

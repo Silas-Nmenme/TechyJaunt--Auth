@@ -5,10 +5,13 @@ const connectDB = require("./src/config/db")
 const userRouter = require("./src/routes/user.routes")
 const carRouter = require("./src/routes/car.routes")
 const paymentRouter = require("./src/routes/payment.routes.js")
+const path = require("path")
 
 
 dotenv.config()
 const app = express()
+
+app.use(express.static(path.join(__dirname, 'public')));
 
 app.use(express.json())
 app.use(morgan("dev"))
