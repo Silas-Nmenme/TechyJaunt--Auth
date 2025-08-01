@@ -78,6 +78,7 @@ exports.makePayment = async (req, res) => {
   }
 };
 
+//Verify transaction Id
 exports.verifyPayment = async (req, res) => {
   const { transaction_id } = req.query;
 
@@ -85,8 +86,13 @@ exports.verifyPayment = async (req, res) => {
     return res.status(400).json({ message: 'Missing transaction_id in query.' });
   }
 
+  const txId = Number(transaction_id);
+  if (isNaN(txId)) {
+    return res.status(400).json({ message: 'Invalid transaction ID. Must be a number.' });
+  }
+
   try {
-    const response = await flw.Transaction.verify({ id: transaction_id });
+    const response = await flw.Transaction.verify({ id: txId });
 
     if (response.data.status !== 'successful') {
       return res.redirect('/failed');
@@ -119,7 +125,7 @@ exports.verifyPayment = async (req, res) => {
       });
     }
 
-    // ✅ Update car status
+    // Update car status
     const car = await Car.findById(meta.carId);
     if (car && !car.isRented) {
       car.isRented = true;
@@ -131,7 +137,7 @@ exports.verifyPayment = async (req, res) => {
       await car.save();
     }
 
-    // ✅ Email receipt
+    // Email receipt
     const user = await User.findById(meta.userId);
     const templatePath = path.join(__dirname, '../emailTemplates/receipt.html');
     let htmlTemplate = fs.readFileSync(templatePath, 'utf-8');
@@ -167,9 +173,13 @@ exports.verifyPayment = async (req, res) => {
     return res.redirect(`/success?tx_ref=${txRef}`);
   } catch (err) {
     console.error('Payment verification error:', err?.response?.data || err.message);
-    return res.status(500).json({ message: 'Payment verification failed.', error: err.message });
+    return res.status(500).json({
+      message: 'Payment verification failed.',
+      error: err?.response?.data?.message || err.message,
+    });
   }
 };
+
 
 //Handles webhook
 exports.handleFlutterwaveWebhook = async (req, res) => {
