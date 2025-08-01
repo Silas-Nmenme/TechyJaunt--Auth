@@ -78,135 +78,160 @@ exports.makePayment = async (req, res) => {
   }
 };
 
-// VERIFY PAYMENT
 exports.verifyPayment = async (req, res) => {
   const { transaction_id } = req.query;
 
-  // Check if transaction_id exists
   if (!transaction_id) {
     return res.status(400).json({ message: 'Missing transaction_id in query.' });
   }
 
   try {
-    // Verify transaction via Flutterwave
     const response = await flw.Transaction.verify({ id: transaction_id });
 
-    if (response.data.status === 'successful') {
-      const existing = await Payment.findOne({ tx_ref: response.data.tx_ref });
-      const isTest = response.data.amount <= 10;
-
-      if (!existing) {
-        await Payment.create({
-          user: response.data.meta?.userId,
-          car: response.data.meta?.carId,
-          amount: response.data.amount,
-          status: 'paid',
-          tx_ref: response.data.tx_ref,
-          flutterwaveTransactionId: response.data.id,
-          currency: response.data.currency,
-          rentalStartDate: response.data.meta?.startDate || null,
-          rentalEndDate: response.data.meta?.endDate || null,
-          isTest: isTest
-        });
-
-        // Fetch user and car for receipt
-        const user = await User.findById(response.data.meta?.userId);
-        const car = await Car.findById(response.data.meta?.carId);
-
-        // Prepare and send email receipt
-        const templatePath = path.join(__dirname, '../emailTemplates/receipt.html');
-        let htmlTemplate = fs.readFileSync(templatePath, 'utf-8');
-
-        htmlTemplate = htmlTemplate
-          .replace('{{customer_name}}', user.name)
-          .replace('{{customer_email}}', user.email)
-          .replace('{{customer_phone}}', 'N/A')
-          .replace('{{car_make}}', car.make)
-          .replace('{{car_model}}', car.model)
-          .replace('{{car_year}}', car.year)
-          .replace('{{start_date}}', formatDate(car.startDate))
-          .replace('{{end_date}}', formatDate(car.endDate))
-          .replace('{{amount}}', response.data.amount)
-          .replace('{{tx_ref}}', response.data.tx_ref)
-          .replace('{{transaction_id}}', response.data.id);
-
-        const transporter = nodemailer.createTransport({
-          service: 'gmail',
-          auth: {
-            user: process.env.MAIL_USER,
-            pass: process.env.MAIL_PASS,
-          },
-        });
-
-        await transporter.sendMail({
-          from: `"Techy Car Rentals" <${process.env.MAIL_USER}>`,
-          to: user.email,
-          subject: isTest ? '[TEST] Car Rental Payment Receipt' : 'Car Rental Payment Receipt',
-          html: htmlTemplate,
-        });
-      }
-
-      return res.redirect(`/success?tx_ref=${response.data.tx_ref}`);
-    } else {
+    if (response.data.status !== 'successful') {
       return res.redirect('/failed');
     }
-  } catch (err) {
-    console.error('Payment verification failed:', err?.response?.data || err.message);
-    return res.status(500).json({
-      message: 'Verification failed.',
-      error: err?.response?.data?.message || err.message
+
+    const txRef = response.data.tx_ref;
+    const meta = response.data.meta || {};
+
+    if (!meta.userId || !meta.carId) {
+      console.error('Missing userId or carId in meta');
+      return res.status(400).json({ message: 'Invalid payment metadata.' });
+    }
+
+    // Check if payment already exists
+    let payment = await Payment.findOne({ tx_ref: txRef });
+    const isTest = response.data.amount <= 10;
+
+    if (!payment) {
+      payment = await Payment.create({
+        user: meta.userId,
+        car: meta.carId,
+        amount: response.data.amount,
+        status: 'paid',
+        tx_ref: txRef,
+        flutterwaveTransactionId: response.data.id,
+        currency: response.data.currency,
+        rentalStartDate: meta.startDate || null,
+        rentalEndDate: meta.endDate || null,
+        isTest,
+      });
+    }
+
+    // ✅ Update car status
+    const car = await Car.findById(meta.carId);
+    if (car && !car.isRented) {
+      car.isRented = true;
+      car.rentedBy = meta.userId;
+      car.status = 'approved';
+      car.startDate = meta.startDate || new Date();
+      car.endDate = meta.endDate || null;
+      car.totalPrice = response.data.amount;
+      await car.save();
+    }
+
+    // ✅ Email receipt
+    const user = await User.findById(meta.userId);
+    const templatePath = path.join(__dirname, '../emailTemplates/receipt.html');
+    let htmlTemplate = fs.readFileSync(templatePath, 'utf-8');
+
+    htmlTemplate = htmlTemplate
+      .replace('{{customer_name}}', user?.name || 'User')
+      .replace('{{customer_email}}', user?.email || 'N/A')
+      .replace('{{customer_phone}}', 'N/A')
+      .replace('{{car_make}}', car?.make || '')
+      .replace('{{car_model}}', car?.model || '')
+      .replace('{{car_year}}', car?.year || '')
+      .replace('{{start_date}}', formatDate(car?.startDate))
+      .replace('{{end_date}}', formatDate(car?.endDate))
+      .replace('{{amount}}', response.data.amount)
+      .replace('{{tx_ref}}', txRef)
+      .replace('{{transaction_id}}', response.data.id);
+
+    const transporter = nodemailer.createTransport({
+      service: 'gmail',
+      auth: {
+        user: process.env.MAIL_USER,
+        pass: process.env.MAIL_PASS,
+      },
     });
+
+    await transporter.sendMail({
+      from: `"Techy Car Rentals" <${process.env.MAIL_USER}>`,
+      to: user?.email,
+      subject: isTest ? '[TEST] Car Rental Payment Receipt' : 'Car Rental Payment Receipt',
+      html: htmlTemplate,
+    });
+
+    return res.redirect(`/success?tx_ref=${txRef}`);
+  } catch (err) {
+    console.error('Payment verification error:', err?.response?.data || err.message);
+    return res.status(500).json({ message: 'Payment verification failed.', error: err.message });
   }
 };
 
-
-// HANDLE FLUTTERWAVE WEBHOOK
+//Handles webhook
 exports.handleFlutterwaveWebhook = async (req, res) => {
-  const flutterwaveSignature = req.headers['verif-hash'];
+  try {
+    const flutterwaveSignature = req.headers['verif-hash'];
 
-  const hash = crypto
-    .createHmac('sha256', process.env.FLW_WEBHOOK_SECRET)
-    .update(JSON.stringify(req.body))
-    .digest('hex');
+    const hash = crypto
+      .createHmac('sha256', process.env.FLW_WEBHOOK_SECRET)
+      .update(JSON.stringify(req.body))
+      .digest('hex');
 
-  if (!flutterwaveSignature || flutterwaveSignature !== hash) {
-    return res.status(401).json({ message: 'Invalid or missing webhook signature.' });
-  }
+    if (!flutterwaveSignature || flutterwaveSignature !== hash) {
+      return res.status(401).json({ message: 'Invalid or missing webhook signature.' });
+    }
 
-  const { event: eventType, data } = req.body;
+    const { event: eventType, data } = req.body;
 
-  if (eventType === 'charge.completed' && data.status === 'successful') {
-    try {
-      const existing = await Payment.findOne({ tx_ref: data.tx_ref });
+    if (eventType === 'charge.completed' && data.status === 'successful') {
+      const meta = data.meta || {};
 
-      
-      if (!existing) {
-        await Payment.create({
-          user: data.meta?.userId,
-          car: data.meta?.carId,
+      if (!meta.userId || !meta.carId) {
+        console.warn('Webhook payload missing meta.userId or meta.carId');
+        return res.status(400).json({ message: 'Invalid metadata in webhook.' });
+      }
+
+      // Avoid duplicate payment records
+      let payment = await Payment.findOne({ tx_ref: data.tx_ref });
+
+      if (!payment) {
+        payment = await Payment.create({
+          user: meta.userId,
+          car: meta.carId,
           amount: data.amount,
           currency: data.currency,
           tx_ref: data.tx_ref,
           flutterwaveTransactionId: data.id,
           status: 'paid',
-          rentalStartDate: data.meta?.startDate || null,
-          rentalEndDate: data.meta?.endDate || null,
+          rentalStartDate: meta.startDate || null,
+          rentalEndDate: meta.endDate || null,
           isTest: data.amount <= 10
         });
       }
 
-      return res.status(200).json({ message: 'Payment recorded successfully.' });
-    } catch (err) {
-      console.error('Webhook processing failed:', err);
-      return res.status(500).json({ message: 'Internal server error.' });
+      // Update Car Rental Status
+      const car = await Car.findById(meta.carId);
+      if (car && !car.isRented) {
+        car.isRented = true;
+        car.rentedBy = meta.userId;
+        car.status = 'approved';
+        car.startDate = meta.startDate || new Date();
+        car.endDate = meta.endDate || null;
+        car.totalPrice = data.amount;
+        await car.save();
+      }
+
+      return res.status(200).json({ message: 'Payment and rental successfully recorded.' });
     }
+
+    // For all other events
+    return res.status(200).json({ message: 'Webhook received but no action taken.' });
+  } catch (err) {
+    console.error('Webhook processing failed:', err.message || err);
+    return res.status(500).json({ message: 'Internal server error.' });
   }
-
-  return res.status(200).json({ message: 'Webhook received.' });
 };
-
-const formatDate = (date) => new Date(date).toLocaleDateString('en-NG', {
-  year: 'numeric',
-  month: 'long',
-  day: 'numeric',
-});
