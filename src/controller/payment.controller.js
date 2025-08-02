@@ -1,6 +1,6 @@
 const axios = require('axios');
 const Flutterwave = require('flutterwave-node-v3');
-const Payment = require('../models/payment.model.js');
+const Payment = require('../models/payment.schema.js');
 const Car = require('../models/car.schema.js');
 const User = require('../models/user.schema.js');
 const crypto = require('crypto');
@@ -80,7 +80,6 @@ exports.makePayment = async (req, res) => {
   }
 };
 
-//Verify transaction Id
 exports.verifyPayment = async (req, res) => {
   const { transaction_id } = req.query;
 
@@ -108,10 +107,13 @@ exports.verifyPayment = async (req, res) => {
       return res.status(400).json({ message: 'Invalid payment metadata.' });
     }
 
-    // Store payment to DB
-    let payment = await Payment.findOne({ tx_ref: txRef });
+    // Convert date strings to actual Date objects
+    const rentalStart = meta.startDate ? new Date(meta.startDate) : new Date();
+    const rentalEnd = meta.endDate ? new Date(meta.endDate) : null;
     const isTest = response.data.amount <= 10;
 
+    // Store payment in DB
+    let payment = await Payment.findOne({ tx_ref: txRef });
     if (!payment) {
       payment = await Payment.create({
         user: meta.userId,
@@ -121,25 +123,25 @@ exports.verifyPayment = async (req, res) => {
         tx_ref: txRef,
         flutterwaveTransactionId: response.data.id,
         currency: response.data.currency,
-        rentalStartDate: meta.startDate || null,
-        rentalEndDate: meta.endDate || null,
-        isTest,
+        rentalStartDate: rentalStart,
+        rentalEndDate: rentalEnd,
+        isTest
       });
     }
 
-    // Update car
+    // Update car status
     const car = await Car.findById(meta.carId);
-    if (car && !car.isRented) {
+    if (car) {
       car.isRented = true;
       car.rentedBy = meta.userId;
       car.status = 'approved';
-      car.startDate = meta.startDate || new Date();
-      car.endDate = meta.endDate || null;
+      car.startDate = rentalStart;
+      car.endDate = rentalEnd;
       car.totalPrice = response.data.amount;
       await car.save();
     }
 
-    // Email receipt
+    // Send receipt email
     const user = await User.findById(meta.userId);
     const templatePath = path.join(__dirname, '../emailTemplates/receipt.html');
     let htmlTemplate = fs.readFileSync(templatePath, 'utf-8');
@@ -151,8 +153,8 @@ exports.verifyPayment = async (req, res) => {
       .replace('{{car_make}}', car?.make || '')
       .replace('{{car_model}}', car?.model || '')
       .replace('{{car_year}}', car?.year || '')
-      .replace('{{start_date}}', formatDate(car?.startDate))
-      .replace('{{end_date}}', formatDate(car?.endDate))
+      .replace('{{start_date}}', formatDate(rentalStart))
+      .replace('{{end_date}}', formatDate(rentalEnd))
       .replace('{{amount}}', response.data.amount)
       .replace('{{tx_ref}}', txRef)
       .replace('{{transaction_id}}', response.data.id);
@@ -172,11 +174,11 @@ exports.verifyPayment = async (req, res) => {
       html: htmlTemplate,
     });
 
-    // SMS confirmation (if user has phone number)
+    // Send SMS
     if (user?.phoneNumber) {
       try {
         await client.messages.create({
-          body: `Hi ${user.name}, your payment for renting ${car.make} ${car.model} was successful. Ref: ${txRef}`,
+          body: `Hi ${user.name}, your payment for renting ${car.make} ${car.model} was successful. Ref: ${txRef}. Rental: ${formatDate(rentalStart)} to ${formatDate(rentalEnd)}.`,
           from: process.env.TWILIO_PHONE,
           to: user.phoneNumber,
         });
@@ -185,9 +187,8 @@ exports.verifyPayment = async (req, res) => {
       }
     }
 
-    // Show mobile-friendly HTML page
-    return res.sendFile(path.join(__dirname, '../public/success.html'));
-
+    // Redirect to dynamic success.html
+    return res.redirect(`/success.html?car=${car.make} ${car.model}&amount=${response.data.amount}&tx=${txRef}&start=${formatDate(rentalStart)}&end=${formatDate(rentalEnd)}`);
 
   } catch (err) {
     console.error('Payment verification error:', err?.response?.data || err.message);

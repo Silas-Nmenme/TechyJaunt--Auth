@@ -1,5 +1,5 @@
 const Car = require("../models/car.schema");
-const Payment = require("../models/payment.model");
+const Payment = require("../models/payment.schema.js");
 const sendEmail = require("../utils/sendEmail.js");
 
 // Manual rental (no payment check)
