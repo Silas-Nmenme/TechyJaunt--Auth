@@ -1,22 +1,42 @@
 const nodemailer = require('nodemailer');
 
 const sendEmail = async (to, subject, html) => {
-  const transporter = nodemailer.createTransport({
-    service: 'gmail', // or use 'SendGrid', 'Mailgun', etc.
-    auth: {
-      user: process.env.EMAIL_USER,
-      pass: process.env.EMAIL_PASS,
-    },
-  });
+  try {
+    // Check required env vars
+    const {
+      EMAIL_HOST,
+      EMAIL_PORT,
+      EMAIL_SECURE,
+      EMAIL_USER,
+      EMAIL_PASS
+    } = process.env;
 
-  const mailOptions = {
-    from: `"TechyJaunt Car Rentals" <${process.env.EMAIL_FROM}>`,
-    to,
-    subject,
-    html,
-  };
+    if (!EMAIL_HOST || !EMAIL_PORT || !EMAIL_USER || !EMAIL_PASS) {
+      throw new Error("Missing required email environment variables.");
+    }
 
-  await transporter.sendMail(mailOptions);
+    const transporter = nodemailer.createTransport({
+      host: EMAIL_HOST,
+      port: parseInt(EMAIL_PORT, 10),
+      secure: EMAIL_SECURE === 'true', // must be boolean
+      auth: {
+        user: EMAIL_USER,
+        pass: EMAIL_PASS,
+      },
+    });
+
+    const mailOptions = {
+      from: `"TechyJaunt Car Rentals" <${EMAIL_USER}>`,
+      to,
+      subject,
+      html,
+    };
+
+    await transporter.sendMail(mailOptions);
+    console.log(`Email sent to: ${to}`);
+  } catch (err) {
+    console.error(`Email send failed to ${to}:`, err.message);
+  }
 };
 
 module.exports = sendEmail;

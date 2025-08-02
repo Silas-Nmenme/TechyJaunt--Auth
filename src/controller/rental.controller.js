@@ -1,8 +1,9 @@
 const Car = require("../models/car.schema");
 const Payment = require("../models/payment.schema.js");
+const User = require("../models/user.schema.js");
 const sendEmail = require("../utils/sendEmail.js");
 
-// Manual rental (no payment check)
+// Manual Rental (Without Payment Verification) 
 exports.rentCar = async (req, res) => {
   const userId = req.user._id;
   const { carId } = req.params;
@@ -15,21 +16,36 @@ exports.rentCar = async (req, res) => {
 
     car.isRented = true;
     car.rentedBy = userId;
-    car.startDate = startDate;
-    car.endDate = endDate;
+    car.startDate = new Date(startDate);
+    car.endDate = new Date(endDate);
     car.totalPrice = totalPrice;
-    car.status = "pending";
+    car.status = "approved";
 
     await car.save();
 
+    const user = await User.findById(userId);
+    const html = `
+      <h2>Manual Rental Confirmation</h2>
+      <p>Hello ${user?.name || 'User'},</p>
+      <p>Your manual rental of <strong>${car.make} ${car.model}</strong> has been confirmed.</p>
+      <ul>
+        <li>Start Date: ${new Date(startDate).toDateString()}</li>
+        <li>End Date: ${new Date(endDate).toDateString()}</li>
+        <li>Total Price: ₦${totalPrice}</li>
+      </ul>
+      <p>Thank you for choosing TechyJaunt Car Rentals!</p>
+    `;
+
+    await sendEmail(user.email, 'Manual Rental Confirmation', html);
+
     return res.status(200).json({ message: "Car rented successfully", car });
   } catch (error) {
-    console.error("Error renting car:", error);
+    console.error("Error during manual rental:", error.message);
     return res.status(500).json({ message: "Internal Server Error" });
   }
 };
 
-// Rental with verified Flutterwave payment
+// Rental After Successful Payment
 exports.rentCarWithPayment = async (req, res) => {
   const userId = req.user._id;
   const { carId } = req.params;
@@ -53,22 +69,21 @@ exports.rentCarWithPayment = async (req, res) => {
 
     car.isRented = true;
     car.rentedBy = userId;
-    car.startDate = payment.rentalStartDate || new Date(); // fallback
+    car.startDate = payment.rentalStartDate || new Date();
     car.endDate = payment.rentalEndDate || null;
     car.totalPrice = payment.amount;
     car.status = "approved";
 
     await car.save();
 
-    // Send confirmation email
-    const userEmail = req.user.email || "no-reply@example.com";
-    const fullName = req.user.fullName || 'User';
-    const htmlContent = `
-      <h2>Rental Confirmed</h2>
-      <p>Hi ${fullName},</p>
-      <p>Your rental for <strong>${car.name}</strong> has been successfully confirmed.</p>
+    const user = await User.findById(userId);
+
+    const html = `
+      <h2>Rental Confirmation</h2>
+      <p>Hello ${user?.name || 'User'},</p>
+      <p>Your rental for <strong>${car.make} ${car.model}</strong> has been successfully confirmed.</p>
       <ul>
-        <li>Rental Start: ${car.startDate?.toDateString()}</li>
+        <li>Rental Start: ${car.startDate.toDateString()}</li>
         <li>Rental End: ${car.endDate?.toDateString() || 'Not specified'}</li>
         <li>Total Price: ₦${car.totalPrice}</li>
         <li>Transaction ID: ${payment.flutterwaveTransactionId || 'N/A'}</li>
@@ -76,7 +91,7 @@ exports.rentCarWithPayment = async (req, res) => {
       <p>Thank you for choosing TechyJaunt Car Rentals!</p>
     `;
 
-    await sendEmail(userEmail, 'Rental Confirmation - TechyJaunt', htmlContent);
+    await sendEmail(user.email, 'Rental Confirmation - TechyJaunt', html);
 
     return res.status(200).json({
       message: "Car rented successfully with payment.",
@@ -89,7 +104,7 @@ exports.rentCarWithPayment = async (req, res) => {
       },
     });
   } catch (error) {
-    console.error("Error renting car with payment:", error);
+    console.error("Error during paid rental:", error.message);
     return res.status(500).json({ message: "Internal Server Error" });
   }
 };

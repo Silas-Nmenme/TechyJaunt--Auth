@@ -1,17 +1,32 @@
 const express = require('express');
 const router = express.Router();
-const { addCar, editCar, deleteCar, getAllCars, searchCars } = require('../controller/admin.controller');
-const {isAuthenticated} = require('../middlewares/isAuth');
-const { rentCar, rentCarWithPayment } = require('../controller/rental.controller');
 
+const {
+  addCar,
+  editCar,
+  deleteCar,
+  getAllCars,
+  searchCars
+} = require('../controller/admin.controller');
+
+const {
+  rentCar,
+  rentCarWithPayment
+} = require('../controller/rental.controller');
+
+const { isAuthenticated } = require('../middlewares/isAuth');
+
+// Public routes
 router.get('/get-cars', getAllCars);
 router.get('/search-cars', searchCars);
-router.post('/add-car',isAuthenticated, addCar);
-router.put('/edit-car/:carId', editCar);
-router.delete('/delete-car/:carId', deleteCar);
 
-router.post('/rent-car/:carId', isAuthenticated, rentCar); // optional if payment not needed
-router.post('/rent-car-paid/:carId', isAuthenticated, rentCarWithPayment);
+// Admin-protected routes
+router.post('/add-car', isAuthenticated, addCar);
+router.put('/edit-car/:carId', isAuthenticated, editCar);
+router.delete('/delete-car/:carId', isAuthenticated, deleteCar);
 
+// Car rental routes
+router.post('/rent/:carId', isAuthenticated, rentCar);              // Without payment
+router.post('/rent-paid/:carId', isAuthenticated, rentCarWithPayment); // With verified payment
 
 module.exports = router;
