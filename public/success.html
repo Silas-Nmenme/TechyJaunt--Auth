@@ -93,13 +93,28 @@
     <p>Thank you for choosing Techy Car Rentals.</p>
 
     <div class="details">
-      <p><strong>Car:</strong> Toyota Corolla</p>
-      <p><strong>Amount Paid:</strong> ₦10,000</p>
-      <p><strong>Transaction Ref:</strong> TX-REF-123456</p>
-      <p><strong>Rental Period:</strong> Aug 5 – Aug 10</p>
+      <p><strong>Car:</strong> <span id="car-name">...</span></p>
+      <p><strong>Amount Paid:</strong> ₦<span id="amount">...</span></p>
+      <p><strong>Transaction Ref:</strong> <span id="tx-ref">...</span></p>
+      <p><strong>Rental Period:</strong> <span id="rental-period">...</span></p>
     </div>
 
-    <a href="/" class="btn">Back to Home</a>
+    <a href="https://techyjaunt-auth-go43.onrender.com" class="btn">Back to Home</a>
   </div>
+
+  <script>
+    const query = new URLSearchParams(window.location.search);
+
+    const car = query.get("car") || "Unknown Car";
+    const amount = query.get("amount") || "0";
+    const tx = query.get("tx") || "N/A";
+    const start = query.get("start") || "-";
+    const end = query.get("end") || "-";
+
+    document.getElementById("car-name").textContent = car;
+    document.getElementById("amount").textContent = amount;
+    document.getElementById("tx-ref").textContent = tx;
+    document.getElementById("rental-period").textContent = `${start} – ${end}`;
+  </script>
 </body>
 </html>

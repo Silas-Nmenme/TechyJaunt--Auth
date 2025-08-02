@@ -21,7 +21,7 @@ exports.makePayment = async (req, res) => {
   }
 
   const userId = req.user._id;
-  const { email, phone_number } = req.body;
+  const { email, phone_number, startDate, endDate } = req.body;
 
   try {
     const car = await Car.findById(carId);
@@ -36,7 +36,7 @@ exports.makePayment = async (req, res) => {
       tx_ref,
       amount: car.price,
       currency: 'NGN',
-      redirect_url: `https://techyjaunt-auth-go43.onrender.com/api/payment/verify`, 
+      redirect_url: `https://techyjaunt-auth-go43.onrender.com`, 
       customer: {
         email,
         phonenumber: phone_number,
@@ -45,8 +45,8 @@ exports.makePayment = async (req, res) => {
       meta: {
         carId: carId.toString(),
         userId: userId.toString(),
-        startDate: car.startDate,
-        endDate: car.endDate
+        startDate,
+        endDate
       },
       customizations: {
         title: 'Car Rental Payment',
@@ -108,7 +108,7 @@ exports.verifyPayment = async (req, res) => {
       return res.status(400).json({ message: 'Invalid payment metadata.' });
     }
 
-    // Store payment
+    // Store payment to DB
     let payment = await Payment.findOne({ tx_ref: txRef });
     const isTest = response.data.amount <= 10;
 
