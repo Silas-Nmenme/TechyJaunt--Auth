@@ -224,7 +224,22 @@ exports.handleFlutterwaveWebhook = async (req, res) => {
         return res.status(400).json({ message: 'Invalid metadata in webhook.' });
       }
 
-      // Avoid duplicate payment records
+      // Convert and validate dates
+      const rentalStart = meta.startDate ? new Date(meta.startDate) : new Date();
+      const rentalEnd = meta.endDate ? new Date(meta.endDate) : null;
+      const isTest = data.amount <= 10;
+
+      // Debug log
+      console.log('Webhook data:', {
+        carId: meta.carId,
+        userId: meta.userId,
+        amount: data.amount,
+        tx_ref: data.tx_ref,
+        rentalStart,
+        rentalEnd
+      });
+
+      // Check or create payment
       let payment = await Payment.findOne({ tx_ref: data.tx_ref });
 
       if (!payment) {
@@ -236,29 +251,30 @@ exports.handleFlutterwaveWebhook = async (req, res) => {
           tx_ref: data.tx_ref,
           flutterwaveTransactionId: data.id,
           status: 'paid',
-          rentalStartDate: meta.startDate || null,
-          rentalEndDate: meta.endDate || null,
-          isTest: data.amount <= 10
+          rentalStartDate: rentalStart,
+          rentalEndDate: rentalEnd,
+          isTest
         });
       }
 
-      // Update Car Rental Status
+      // Always update car status
       const car = await Car.findById(meta.carId);
-      if (car && !car.isRented) {
+      if (car) {
         car.isRented = true;
         car.rentedBy = meta.userId;
         car.status = 'approved';
-        car.startDate = meta.startDate || new Date();
-        car.endDate = meta.endDate || null;
+        car.startDate = rentalStart;
+        car.endDate = rentalEnd;
         car.totalPrice = data.amount;
         await car.save();
       }
 
-      return res.status(200).json({ message: 'Payment and rental successfully recorded.' });
+      return res.status(200).json({ message: 'Payment and rental successfully recorded via webhook.' });
     }
 
     // For all other events
-    return res.status(200).json({ message: 'Webhook received but no action taken.' });
+    return res.status(200).json({ message: 'Webhook received but no matching action taken.' });
+
   } catch (err) {
     console.error('Webhook processing failed:', err.message || err);
     return res.status(500).json({ message: 'Internal server error.' });
