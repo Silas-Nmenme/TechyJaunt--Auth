@@ -15,56 +15,70 @@ const saltRounds = 10;
 
 const signup = async (req, res) => {
   const { name, email, password } = req.body;
+
   // Validate input
   if (!name || !email || !password) {
     return res.status(400).json({ message: "All fields are required" });
   }
+
   if (password.length < 6) {
-    return res
-      .status(400)
-      .json({ message: "Password must be at least 6 characters long" });
+    return res.status(400).json({ message: "Password must be at least 6 characters long" });
   }
 
   try {
-    // Check if user already exists
+    // Check for existing user
     const existingUser = await User.findOne({ email });
     if (existingUser) {
       return res.status(400).json({ message: "User already exists" });
     }
-    // Hash the password
+
+    // Hash password
     const hashedPassword = await bcrypt.hash(password, saltRounds);
 
-    const token = await jwt.sign({ email: email }, process.env.JWT_SECRET, {
-      expiresIn: process.env.JWT_EXPIRATION,
+    // Generate JWT and email token
+    const token = jwt.sign({ email }, process.env.JWT_SECRET, {
+      expiresIn: process.env.JWT_EXPIRATION || '1d',
     });
-
-    // Generate Email Token
     const emailToken = uuidv4();
 
-    // Create new user
+    // Create and save user
     const newUser = new User({
       name,
       email,
       password: hashedPassword,
-      token: token,
-      emailToken: emailToken,
+      token,
+      emailToken,
     });
+
     await newUser.save();
 
-    // Send Welcome Email with Template
+    // Prepare and send welcome email
     const welcomeTemplate = emailTemplates.welcomeTemplate(name, emailToken);
-    await sendTemplateEmail(
-      email,
-      welcomeTemplate.subject,
-      welcomeTemplate.html,
-      welcomeTemplate.text
-    );
 
-    return res
-      .status(201)
-      .json({ message: "User Created Succesfully", newUser });
+    try {
+      await sendTemplateEmail(
+        email,
+        welcomeTemplate.subject,
+        welcomeTemplate.html,
+        welcomeTemplate.text
+      );
+    } catch (emailErr) {
+      console.error("Email sending failed:", emailErr.message);
+      // Optional: delete user if email failed?
+    }
+
+    return res.status(201).json({
+      message: "User created successfully",
+      user: {
+        id: newUser._id,
+        name: newUser.name,
+        email: newUser.email,
+        token: newUser.token
+      }
+    });
+
   } catch (error) {
-    console.error("Error creating user:", error);
+    console.error("Signup error:", error);
     return res.status(500).json({ message: "Internal Server Error" });
   }
 };
