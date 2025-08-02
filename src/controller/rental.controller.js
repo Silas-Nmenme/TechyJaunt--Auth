@@ -3,6 +3,7 @@ const Payment = require("../models/payment.schema.js");
 const User = require("../models/user.schema.js");
 const sendEmail = require("../utils/sendEmail.js");
 
+
 // Manual Rental (Without Payment Verification) 
 exports.rentCar = async (req, res) => {
   const userId = req.user._id;

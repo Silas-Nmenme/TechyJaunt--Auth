@@ -2,52 +2,63 @@
 const axios = require('axios');
 const SmsLog = require('../models/smsLog.schema');
 
+/**
+ * Send SMS using KudiSMS API and log the result.
+ *
+ * @param {string} to - Recipient phone number (in international format)
+ * @param {string} message - The text message to send
+ * @param {string|null} userId - Optional MongoDB user ID
+ */
 const sendSms = async (to, message, userId = null) => {
   const { KUDI_API_KEY, KUDI_SENDER_ID } = process.env;
 
   if (!KUDI_API_KEY || !KUDI_SENDER_ID) {
-    console.error("Missing KUDI SMS credentials.");
+    console.error("KudiSMS error: Missing API key or sender ID in environment variables.");
     return;
   }
 
   try {
+    const payload = {
+      action: 'send-sms',
+      api_key: KUDI_API_KEY,
+      to,
+      from: KUDI_SENDER_ID,
+      sms: message,
+    };
+
     const response = await axios.post(
       'https://account.kudisms.net/api/',
-      {
-        action: 'send-sms',
-        api_key: KUDI_API_KEY,
-        to,
-        from: KUDI_SENDER_ID,
-        sms: message,
-      },
-      {
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      }
+      payload,
+      { headers: { 'Content-Type': 'application/json' } }
     );
 
-    // Save SMS log to database
+    // Log success
     await SmsLog.create({
       user: userId,
       phoneNumber: to,
       message,
-      status: "sent",
+      status: 'sent',
+      provider: 'KudiSMS',
       providerResponse: response.data,
+      sentAt: new Date(),
     });
 
-    console.log(`SMS sent to ${to}:`, response.data);
+    console.log(`KudiSMS sent to ${to}:`, response.data);
   } catch (error) {
-    console.error(`SMS failed to ${to}:`, error.response?.data || error.message);
+    const providerResponse = error.response?.data || { message: error.message };
 
-    // Save failure log
+    // Log failure
     await SmsLog.create({
       user: userId,
       phoneNumber: to,
       message,
-      status: "failed",
-      providerResponse: error.response?.data || { message: error.message },
+      status: 'failed',
+      provider: 'KudiSMS',
+      providerResponse,
+      sentAt: new Date(),
     });
+
+    console.error(`KudiSMS failed to ${to}:`, providerResponse);
   }
 };
 
