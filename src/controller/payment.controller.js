@@ -7,8 +7,8 @@ const crypto = require('crypto');
 const fs = require('fs');
 const path = require('path');
 const nodemailer = require('nodemailer');
-const twilio = require('twilio');
-const client = twilio(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN);
+const sendSMS = require('../utils/sendSMS.js'); 
+
 
 const flw = new Flutterwave(process.env.FLW_PUBLIC_KEY, process.env.FLW_SECRET_KEY);
 
@@ -62,7 +62,7 @@ exports.makePayment = async (req, res) => {
       customizations: {
         title: 'Car Rental Payment',
         description: `Payment for renting ${car.make} ${car.model}`,
-        logo: '../car logo.webp' // change to your real hosted logo
+        logo: '../car logo.webp' 
       }
     };
 
@@ -92,9 +92,6 @@ exports.makePayment = async (req, res) => {
   }
 };
 
-// ===================
-// VERIFY PAYMENT
-// ===================
 exports.verifyPayment = async (req, res) => {
   const { transaction_id } = req.query;
 
@@ -105,10 +102,7 @@ exports.verifyPayment = async (req, res) => {
 
   try {
     const response = await flw.Transaction.verify({ id: txId });
-
-    if (response.data.status !== 'successful') {
-      return res.redirect('/failed');
-    }
+    if (response.data.status !== 'successful') return res.redirect('/failed');
 
     const data = response.data;
     const txRef = data.tx_ref;
@@ -145,7 +139,6 @@ exports.verifyPayment = async (req, res) => {
       }
     }
 
-    // Update car
     const car = await Car.findById(meta.carId);
     if (car) {
       car.isRented = true;
@@ -158,7 +151,6 @@ exports.verifyPayment = async (req, res) => {
       console.log("Car updated:", car);
     }
 
-    // Send email
     const user = await User.findById(meta.userId);
     if (!user) {
       console.error("User not found for ID:", meta.userId);
@@ -203,18 +195,10 @@ exports.verifyPayment = async (req, res) => {
       }
     }
 
-    // Send SMS
+    // Send Kudi SMS
     if (user?.phoneNumber) {
-      try {
-        await client.messages.create({
-          body: `Hi ${user.name}, your payment for renting ${car.make} ${car.model} was successful. Ref: ${txRef}. Rental: ${formatDate(rentalStart)} to ${formatDate(rentalEnd)}.`,
-          from: process.env.TWILIO_PHONE,
-          to: user.phoneNumber
-        });
-        console.log("SMS sent to:", user.phoneNumber);
-      } catch (smsErr) {
-        console.error("SMS failed:", smsErr.message);
-      }
+      const smsText = `Hi ${user.name}, your payment for renting ${car.make} ${car.model} was successful.\nRef: ${txRef}.\nRental: ${formatDate(rentalStart)} to ${formatDate(rentalEnd)}.\nAmount: ₦${amount}`;
+      await sendSms(user.phoneNumber, smsText, user._id);
     }
 
     return res.status(200).json({
@@ -236,6 +220,8 @@ exports.verifyPayment = async (req, res) => {
   }
 };
 
+
+//Webhook handler for Flutterwave
 exports.handleFlutterwaveWebhook = async (req, res) => {
   try {
     const flutterwaveSignature = req.headers['verif-hash'];
@@ -244,7 +230,6 @@ exports.handleFlutterwaveWebhook = async (req, res) => {
       .update(JSON.stringify(req.body))
       .digest('hex');
 
-    // Validate signature
     if (!flutterwaveSignature || flutterwaveSignature !== expectedHash) {
       return res.status(401).json({ message: 'Invalid or missing webhook signature.' });
     }
@@ -267,18 +252,7 @@ exports.handleFlutterwaveWebhook = async (req, res) => {
     const rentalEnd = meta.endDate ? new Date(meta.endDate) : null;
     const isTest = amount <= 10;
 
-    console.log('Webhook received for payment:', {
-      txRef,
-      userId: meta.userId,
-      carId: meta.carId,
-      amount,
-      startDate: rentalStart,
-      endDate: rentalEnd
-    });
-
-    // Create or find payment
     let payment = await Payment.findOne({ tx_ref: txRef });
-
     if (!payment) {
       try {
         payment = await Payment.create({
@@ -293,29 +267,26 @@ exports.handleFlutterwaveWebhook = async (req, res) => {
           rentalEndDate: rentalEnd,
           isTest
         });
-        console.log('Payment stored from webhook:', payment);
       } catch (err) {
         console.error('Payment save failed (webhook):', err.message);
       }
     }
 
-    // Update the car
-    try {
-      const car = await Car.findById(meta.carId);
-      if (car) {
-        car.isRented = true;
-        car.rentedBy = meta.userId;
-        car.status = 'approved';
-        car.startDate = rentalStart;
-        car.endDate = rentalEnd;
-        car.totalPrice = amount;
-        await car.save();
-        console.log('Car updated from webhook:', car);
-      } else {
-        console.error('Car not found for ID:', meta.carId);
-      }
-    } catch (err) {
-      console.error('Failed to update car from webhook:', err.message);
+    const car = await Car.findById(meta.carId);
+    if (car) {
+      car.isRented = true;
+      car.rentedBy = meta.userId;
+      car.status = 'approved';
+      car.startDate = rentalStart;
+      car.endDate = rentalEnd;
+      car.totalPrice = amount;
+      await car.save();
+    }
+
+    const user = await User.findById(meta.userId);
+    if (user?.phoneNumber) {
+      const smsText = `Hi ${user.name}, your payment for ${car.make} ${car.model} was successful.\nRef: ${txRef}\nRental: ${formatDate(rentalStart)} to ${formatDate(rentalEnd)}\nAmount: ₦${amount}`;
+      await sendSms(user.phoneNumber, smsText, user._id);
     }
 
     return res.status(200).json({ message: 'Payment and rental successfully recorded via webhook.' });

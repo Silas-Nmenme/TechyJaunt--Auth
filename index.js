@@ -8,6 +8,8 @@ const userRouter = require("./src/routes/user.routes")
 const carRouter = require("./src/routes/car.routes")
 const paymentRouter = require("./src/routes/payment.routes.js")
 const path = require("path")
+const sendSms = require("./src/utils/sendSms.js");
+
 
 
 dotenv.config()
