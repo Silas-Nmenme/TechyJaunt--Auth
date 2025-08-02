@@ -47,7 +47,7 @@ exports.makePayment = async (req, res) => {
       tx_ref,
       amount: car.price,
       currency: 'NGN',
-      redirect_url: `https://techyjaunt-auth-go43.onrender.com/api/payment/verify`,
+      redirect_url: `https://techyjaunt-auth-go43.onrender.com`,
       customer: {
         email,
         phonenumber: phone_number,
