@@ -62,7 +62,7 @@ exports.makePayment = async (req, res) => {
       customizations: {
         title: 'Car Rental Payment',
         description: `Payment for renting ${car.make} ${car.model}`,
-        logo: 'https://yourdomain.com/logo/car-logo.webp' // change to your real hosted logo
+        logo: '../car logo.webp' // change to your real hosted logo
       }
     };
 
