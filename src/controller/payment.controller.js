@@ -46,14 +46,15 @@ exports.makePayment = async (req, res) => {
       tx_ref,
       amount: car.price,
       currency: 'NGN',
-      redirect_url: process.env.FLW_REDIRECT_URL ||
+     redirect_url:
+        process.env.FLW_REDIRECT_URL ||
         "http://localhost:4500/api/payment/flutterwave/callback",
-       customer: {
-        email: user.email,
-        name: user.name,
+      customer: {
+        email,
+        phonenumber: phone_number,
+        name: req.user.name || "Customer"
       },
       meta: {
-        transactionId: transaction._id.toString(),
         carId: carId.toString(),
         userId: userId.toString(),
         startDate,
@@ -264,7 +265,8 @@ exports.handleFlutterwaveWebhook = async (req, res) => {
           flutterwaveTransactionId: data.id,
           status: 'paid',
           rentalStartDate: rentalStart,
-          rentalEndDate: rentalEnd
+          rentalEndDate: rentalEnd,
+
         });
       } catch (err) {
         console.error('Payment save failed (webhook):', err.message);
