@@ -24,19 +24,8 @@ exports.rentCar = async (req, res) => {
 
     await car.save();
 
+    //Get user details
     const user = await User.findById(userId);
-    const html = `
-      <h2>Manual Rental Confirmation</h2>
-      <p>Hello ${user?.name || 'User'},</p>
-      <p>Your manual rental of <strong>${car.make} ${car.model}</strong> has been confirmed.</p>
-      <ul>
-        <li>Start Date: ${new Date(startDate).toDateString()}</li>
-        <li>End Date: ${new Date(endDate).toDateString()}</li>
-        <li>Total Price: ₦${totalPrice}</li>
-      </ul>
-      <p>Thank you for choosing TechyJaunt Car Rentals!</p>
-    `;
-
     await sendEmail(user.email, 'Manual Rental Confirmation', html);
 
     return res.status(200).json({ message: "Car rented successfully", car });

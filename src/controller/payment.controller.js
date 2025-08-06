@@ -21,11 +21,12 @@ function formatDate(date) {
   });
 }
 
-// ===================
+
 // MAKE PAYMENT
-// ===================
 exports.makePayment = async (req, res) => {
   const carId = req.params.carId;
+
+
 
   if (!req.user || !req.user._id || !req.user.email) {
     return res.status(401).json({ message: 'User authentication failed.' });
@@ -38,8 +39,6 @@ exports.makePayment = async (req, res) => {
     const car = await Car.findById(carId);
     if (!car) return res.status(404).json({ message: 'Car not found.' });
 
-    // Temporary test price (remove or update later)
-    car.price = 10;
 
     const tx_ref = `tx-${Date.now()}-${userId}`;
 
@@ -92,6 +91,7 @@ exports.makePayment = async (req, res) => {
   }
 };
 
+// VERIFY PAYMENT
 exports.verifyPayment = async (req, res) => {
   const { transaction_id } = req.query;
 
@@ -116,7 +116,7 @@ exports.verifyPayment = async (req, res) => {
 
     const rentalStart = meta.startDate ? new Date(meta.startDate) : new Date();
     const rentalEnd = meta.endDate ? new Date(meta.endDate) : null;
-    const isTest = amount <= 10;
+  
 
     let payment = await Payment.findOne({ tx_ref: txRef });
     if (!payment) {
@@ -130,8 +130,7 @@ exports.verifyPayment = async (req, res) => {
           flutterwaveTransactionId: data.id,
           status: 'paid',
           rentalStartDate: rentalStart,
-          rentalEndDate: rentalEnd,
-          isTest
+          rentalEndDate: rentalEnd
         });
         console.log("Payment saved:", payment);
       } catch (err) {
@@ -250,7 +249,7 @@ exports.handleFlutterwaveWebhook = async (req, res) => {
 
     const rentalStart = meta.startDate ? new Date(meta.startDate) : new Date();
     const rentalEnd = meta.endDate ? new Date(meta.endDate) : null;
-    const isTest = amount <= 10;
+  
 
     let payment = await Payment.findOne({ tx_ref: txRef });
     if (!payment) {
@@ -264,8 +263,7 @@ exports.handleFlutterwaveWebhook = async (req, res) => {
           flutterwaveTransactionId: data.id,
           status: 'paid',
           rentalStartDate: rentalStart,
-          rentalEndDate: rentalEnd,
-          isTest
+          rentalEndDate: rentalEnd
         });
       } catch (err) {
         console.error('Payment save failed (webhook):', err.message);

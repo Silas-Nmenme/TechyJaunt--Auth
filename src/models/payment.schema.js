@@ -44,10 +44,6 @@ const paymentSchema = new mongoose.Schema({
     type: Date,
     required: true
   },
-  isTest: {
-    type: Boolean,
-    default: false
-  },
   notes: {
     type: String,
     trim: true,
