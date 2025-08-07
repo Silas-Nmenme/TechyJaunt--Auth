@@ -24,24 +24,29 @@ const paymentSchema = new mongoose.Schema({
   tx_ref: {
     type: String,
   },
-  flutterwaveTransactionId: {
-    type: Number,
-    required: true
-  },
   status: {
     type: String,
     enum: ["pending", "successful", "failed"],
     default: 'pending'
   },
-  rentalStartDate: {
+  startDate: {
     type: Date,
     required: true
   },
-  rentalEndDate: {
+  endDate: {
     type: Date,
     required: true
   },
-
+  phone_number: {
+    type: String,
+    required: true,
+    trim: true
+  },
+  email : {
+    type: String,
+    required: true,
+    trim: true
+  },
 }, {
   timestamps: true,
   versionKey: false
