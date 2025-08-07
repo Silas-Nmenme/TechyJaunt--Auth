@@ -23,6 +23,9 @@ const paymentSchema = new mongoose.Schema({
   },
   tx_ref: {
     type: String,
+    required: true,
+    unique: true, // Optional: useful to prevent duplicate tx_refs
+    trim: true
   },
   status: {
     type: String,
@@ -42,11 +45,17 @@ const paymentSchema = new mongoose.Schema({
     required: true,
     trim: true
   },
-  email : {
+  email: {
     type: String,
     required: true,
     trim: true
   },
+  flutterwaveTransactionId: {
+    type: String,
+    unique: true,
+    sparse: true,
+    default: undefined 
+  }
 }, {
   timestamps: true,
   versionKey: false
