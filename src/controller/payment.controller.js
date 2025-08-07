@@ -100,7 +100,7 @@ exports.handleFlutterwaveWebhook = async (req, res) => {
 
     if (event.data.status === 'successful' && event.data.amount >= payment.amount) {
       payment.status = 'successful';
-      payment.flutterwaveTransactionId = event.data.id;
+      
       await payment.save();
 
       const car = await Car.findById(payment.car);
