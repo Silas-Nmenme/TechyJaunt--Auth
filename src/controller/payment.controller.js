@@ -27,6 +27,11 @@ exports.makePayment = async (req, res) => {
       return res.status(401).json({ message: 'Unauthorized. User not logged in.' });
     }
 
+    // Input validation
+    if (!email || !phone_number || !startDate || !endDate) {
+      return res.status(400).json({ message: 'All fields are required.' });
+    }
+
     const car = await Car.findById(carId);
     if (!car) return res.status(404).json({ message: 'Car not found.' });
 
@@ -43,6 +48,7 @@ exports.makePayment = async (req, res) => {
       phone_number,
       startDate: new Date(startDate),
       endDate: new Date(endDate),
+      flutterwaveTransactionId: undefined, // avoid null insert
     });
 
     const payload = {
@@ -91,6 +97,7 @@ exports.handleFlutterwaveWebhook = async (req, res) => {
     }
 
     const txRef = event.data.tx_ref;
+    // Check if payment record exists
     const payment = await Payment.findOne({ tx_ref: txRef });
     if (!payment) return res.status(404).json({ message: 'Payment record not found' });
 
@@ -100,7 +107,12 @@ exports.handleFlutterwaveWebhook = async (req, res) => {
 
     if (event.data.status === 'successful' && event.data.amount >= payment.amount) {
       payment.status = 'successful';
-      
+
+      // Avoid saving null or duplicate transaction ID
+      if (event.data.id) {
+        payment.flutterwaveTransactionId = event.data.id;
+      }
+
       await payment.save();
 
       const car = await Car.findById(payment.car);
@@ -131,26 +143,11 @@ exports.handleFlutterwaveWebhook = async (req, res) => {
                 <h2 style="color: #10182F;">Hi ${user.name},</h2>
                 <p style="font-size: 16px;">Your payment for the car rental has been successfully processed. Below are your rental details:</p>
                 <table style="width: 100%; margin-top: 20px; border-collapse: collapse;">
-                  <tr>
-                    <td style="padding: 10px; border-bottom: 1px solid #eee;"><strong>Car:</strong></td>
-                    <td style="padding: 10px; border-bottom: 1px solid #eee;">${car.make} ${car.model}</td>
-                  </tr>
-                  <tr>
-                    <td style="padding: 10px; border-bottom: 1px solid #eee;"><strong>Start Date:</strong></td>
-                    <td style="padding: 10px; border-bottom: 1px solid #eee;">${formatDate(car.startDate)}</td>
-                  </tr>
-                  <tr>
-                    <td style="padding: 10px; border-bottom: 1px solid #eee;"><strong>End Date:</strong></td>
-                    <td style="padding: 10px; border-bottom: 1px solid #eee;">${formatDate(car.endDate)}</td>
-                  </tr>
-                  <tr>
-                    <td style="padding: 10px; border-bottom: 1px solid #eee;"><strong>Total Price:</strong></td>
-                    <td style="padding: 10px; border-bottom: 1px solid #eee;">₦${payment.amount}</td>
-                  </tr>
-                  <tr>
-                    <td style="padding: 10px;"><strong>Transaction ID:</strong></td>
-                    <td style="padding: 10px;">${event.data.id}</td>
-                  </tr>
+                  <tr><td style="padding: 10px; border-bottom: 1px solid #eee;"><strong>Car:</strong></td><td style="padding: 10px; border-bottom: 1px solid #eee;">${car.make} ${car.model}</td></tr>
+                  <tr><td style="padding: 10px; border-bottom: 1px solid #eee;"><strong>Start Date:</strong></td><td style="padding: 10px; border-bottom: 1px solid #eee;">${formatDate(car.startDate)}</td></tr>
+                  <tr><td style="padding: 10px; border-bottom: 1px solid #eee;"><strong>End Date:</strong></td><td style="padding: 10px; border-bottom: 1px solid #eee;">${formatDate(car.endDate)}</td></tr>
+                  <tr><td style="padding: 10px; border-bottom: 1px solid #eee;"><strong>Total Price:</strong></td><td style="padding: 10px; border-bottom: 1px solid #eee;">₦${payment.amount}</td></tr>
+                  <tr><td style="padding: 10px;"><strong>Transaction ID:</strong></td><td style="padding: 10px;">${event.data.id}</td></tr>
                 </table>
                 <p style="margin-top: 30px; font-size: 16px;">We appreciate your business and look forward to serving you again.</p>
                 <div style="margin-top: 40px; text-align: center;">
