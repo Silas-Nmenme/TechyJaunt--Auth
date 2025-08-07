@@ -16,44 +16,41 @@ const saltRounds = 10;
 
 // User Signup
 const signup = async (req, res) => {
-  const { name, email, password } = req.body;
+  const { name, email, password, phoneNumber } = req.body; 
+
   // Validate input
-  if (!name || !email || !password) {
-    return res.status(400).json({ message: "All fields are required" });
+  if (!name || !email || !password || !phoneNumber) {
+    return res.status(400).json({ message: "All fields are required including phone number" });
   }
+
   if (password.length < 6) {
-    return res
-      .status(400)
-      .json({ message: "Password must be at least 6 characters long" });
+    return res.status(400).json({ message: "Password must be at least 6 characters long" });
   }
 
   try {
-    // Check if user already exists
     const existingUser = await User.findOne({ email });
     if (existingUser) {
       return res.status(400).json({ message: "User already exists" });
     }
-    // Hash the password
-    const hashedPassword = await bcrypt.hash(password, saltRounds);
 
-    const token = await jwt.sign({ email: email }, process.env.JWT_SECRET, {
-      expiresIn: process.env.JWT_EXPIRATION,
+    const hashedPassword = await bcrypt.hash(password, 10);
+    const token = jwt.sign({ email }, process.env.JWT_SECRET, {
+      expiresIn: process.env.JWT_EXPIRATION || '1d',
     });
-
-    // Generate Email Token
     const emailToken = uuidv4();
 
-    // Create new user
     const newUser = new User({
       name,
       email,
       password: hashedPassword,
-      token: token,
-      emailToken: emailToken,
+      token,
+      emailToken,
+      phoneNumber, 
     });
+
     await newUser.save();
 
-    // Send Welcome Email with Template
+    // Send welcome email
     const welcomeTemplate = emailTemplates.welcomeTemplate(name, emailToken);
     await sendTemplateEmail(
       email,
@@ -62,14 +59,23 @@ const signup = async (req, res) => {
       welcomeTemplate.text
     );
 
-    return res
-      .status(201)
-      .json({ message: "User Created Succesfully", newUser });
+    return res.status(201).json({
+      message: "User created successfully",
+      user: {
+        id: newUser._id,
+        name: newUser.name,
+        email: newUser.email,
+        phoneNumber: newUser.phoneNumber,
+        token: newUser.token
+      }
+    });
+
   } catch (error) {
-    console.error("Error creating user:", error);
+    console.error("Signup error:", error);
     return res.status(500).json({ message: "Internal Server Error" });
   }
 };
+
 
 //Verify Email
 const verifyEmail = async (req, res) => {
