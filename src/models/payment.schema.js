@@ -49,8 +49,8 @@ const paymentSchema = new mongoose.Schema({
   },
   flutterwaveTransactionId: {
     type: String,
-    trim: true,
-    unique: true
+    unique: true,
+    sparse: true,
   }
 }, {
   timestamps: true,
