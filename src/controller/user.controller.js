@@ -13,76 +13,65 @@ const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 // Salt rounds for password hashing
 const saltRounds = 10;
 
+
+// User Signup
 const signup = async (req, res) => {
   const { name, email, password } = req.body;
-
   // Validate input
   if (!name || !email || !password) {
     return res.status(400).json({ message: "All fields are required" });
   }
-
   if (password.length < 6) {
-    return res.status(400).json({ message: "Password must be at least 6 characters long" });
+    return res
+      .status(400)
+      .json({ message: "Password must be at least 6 characters long" });
   }
 
   try {
-    // Check for existing user
+    // Check if user already exists
     const existingUser = await User.findOne({ email });
     if (existingUser) {
       return res.status(400).json({ message: "User already exists" });
     }
-
-    // Hash password
+    // Hash the password
     const hashedPassword = await bcrypt.hash(password, saltRounds);
 
-    // Generate JWT and email token
-    const token = jwt.sign({ email }, process.env.JWT_SECRET, {
-      expiresIn: process.env.JWT_EXPIRATION || '1d',
+    const token = await jwt.sign({ email: email }, process.env.JWT_SECRET, {
+      expiresIn: process.env.JWT_EXPIRATION,
     });
+
+    // Generate Email Token
     const emailToken = uuidv4();
 
-    // Create and save user
+    // Create new user
     const newUser = new User({
       name,
       email,
       password: hashedPassword,
-      token,
-      emailToken,
+      token: token,
+      emailToken: emailToken,
     });
-
     await newUser.save();
 
-    // Prepare and send welcome email
+    // Send Welcome Email with Template
     const welcomeTemplate = emailTemplates.welcomeTemplate(name, emailToken);
+    await sendTemplateEmail(
+      email,
+      welcomeTemplate.subject,
+      welcomeTemplate.html,
+      welcomeTemplate.text
+    );
 
-    try {
-      await sendTemplateEmail(
-        email,
-        welcomeTemplate.subject,
-        welcomeTemplate.html,
-        welcomeTemplate.text
-      );
-    } catch (emailErr) {
-      console.error("Email sending failed:", emailErr.message);
-      // Optional: delete user if email failed?
-    }
-
-    return res.status(201).json({
-      message: "User created successfully",
-      user: {
-        id: newUser._id,
-        name: newUser.name,
-        email: newUser.email,
-        token: newUser.token
-      }
-    });
-
+    return res
+      .status(201)
+      .json({ message: "User Created Succesfully", newUser });
   } catch (error) {
-    console.error("Signup error:", error);
+    console.error("Error creating user:", error);
     return res.status(500).json({ message: "Internal Server Error" });
   }
 };
 
+//Verify Email
 const verifyEmail = async (req, res) => {
   const token = req.params.token;
   if (!token) {
@@ -159,6 +148,8 @@ const login = async (req, res) => {
   }
 };
 
+
+//Make Admin
 const makeAdmin = async (req, res) => {
   const { userId } = req.params;
   try {
@@ -212,6 +203,8 @@ const forgotPassword = async (req, res) => {
   }
 };
 
+
+//Verify OTP
 const verifyOtp = async (req, res) => {
   const { otp } = req.body;
   try {
