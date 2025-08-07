@@ -39,8 +39,10 @@ exports.makePayment = async (req, res) => {
       currency: 'NGN',
       tx_ref,
       status: 'pending',
-      rentalStartDate: new Date(startDate),
-      rentalEndDate: new Date(endDate),
+      email,
+      phone_number,
+      startDate: new Date(startDate),
+      endDate: new Date(endDate),
     });
 
     const payload = {
@@ -84,7 +86,7 @@ exports.handleFlutterwaveWebhook = async (req, res) => {
   try {
     const event = req.body;
 
-    if (!event || !event.data || !event.data.tx_ref) {
+    if (!event?.data?.tx_ref) {
       return res.status(400).json({ message: 'Invalid webhook data' });
     }
 
@@ -92,20 +94,21 @@ exports.handleFlutterwaveWebhook = async (req, res) => {
     const payment = await Payment.findOne({ tx_ref: txRef });
     if (!payment) return res.status(404).json({ message: 'Payment record not found' });
 
-    if (payment.status === 'paid') {
+    if (payment.status === 'successful') {
       return res.status(200).json({ message: 'Payment already processed' });
     }
 
     if (event.data.status === 'successful' && event.data.amount >= payment.amount) {
-      payment.status = 'paid';
+      payment.status = 'successful';
+      payment.flutterwaveTransactionId = event.data.id;
       await payment.save();
 
       const car = await Car.findById(payment.car);
       if (car) {
         car.isRented = true;
         car.rentedBy = payment.user;
-        car.startDate = payment.rentalStartDate;
-        car.endDate = payment.rentalEndDate;
+        car.startDate = payment.startDate;
+        car.endDate = payment.endDate;
         car.totalPrice = payment.amount;
         car.status = 'approved';
         await car.save();
@@ -119,50 +122,47 @@ exports.handleFlutterwaveWebhook = async (req, res) => {
         }
 
         const emailHtml = `
-  <div style="font-family: Arial, sans-serif; color: #333; padding: 20px; background-color: #f9f9f9;">
-    <div style="max-width: 600px; margin: auto; background: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 10px rgba(0,0,0,0.05);">
-      <div style="background-color: #10182F; padding: 20px; text-align: center;">
-        <h1 style="color: #ffffff; margin: 0;">TechyJaunt Car Rentals</h1>
-      </div>
-      <div style="padding: 30px;">
-        <h2 style="color: #10182F;">Hi ${user.name},</h2>
-        <p style="font-size: 16px;">Your payment for the car rental has been successfully processed. Below are your rental details:</p>
-
-        <table style="width: 100%; margin-top: 20px; border-collapse: collapse;">
-          <tr>
-            <td style="padding: 10px; border-bottom: 1px solid #eee;"><strong>Car:</strong></td>
-            <td style="padding: 10px; border-bottom: 1px solid #eee;">${car.make} ${car.model}</td>
-          </tr>
-          <tr>
-            <td style="padding: 10px; border-bottom: 1px solid #eee;"><strong>Start Date:</strong></td>
-            <td style="padding: 10px; border-bottom: 1px solid #eee;">${formatDate(car.startDate)}</td>
-          </tr>
-          <tr>
-            <td style="padding: 10px; border-bottom: 1px solid #eee;"><strong>End Date:</strong></td>
-            <td style="padding: 10px; border-bottom: 1px solid #eee;">${formatDate(car.endDate)}</td>
-          </tr>
-          <tr>
-            <td style="padding: 10px; border-bottom: 1px solid #eee;"><strong>Total Price:</strong></td>
-            <td style="padding: 10px; border-bottom: 1px solid #eee;">₦${payment.amount}</td>
-          </tr>
-          <tr>
-            <td style="padding: 10px;"><strong>Transaction ID:</strong></td>
-            <td style="padding: 10px;">${event.data.id}</td>
-          </tr>
-        </table>
-
-        <p style="margin-top: 30px; font-size: 16px;">We appreciate your business and look forward to serving you again.</p>
-
-        <div style="margin-top: 40px; text-align: center;">
-          <a href="https://techyjaunt.com" style="background-color: #10182F; color: #ffffff; padding: 12px 24px; text-decoration: none; border-radius: 5px;">Visit Our Website</a>
-        </div>
-      </div>
-      <div style="background-color: #f1f1f1; text-align: center; padding: 15px; font-size: 12px; color: #777;">
-        &copy; ${new Date().getFullYear()} TechyJaunt. All rights reserved.
-      </div>
-    </div>
-  </div>
-`;
+          <div style="font-family: Arial, sans-serif; color: #333; padding: 20px; background-color: #f9f9f9;">
+            <div style="max-width: 600px; margin: auto; background: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 10px rgba(0,0,0,0.05);">
+              <div style="background-color: #10182F; padding: 20px; text-align: center;">
+                <h1 style="color: #ffffff; margin: 0;">TechyJaunt Car Rentals</h1>
+              </div>
+              <div style="padding: 30px;">
+                <h2 style="color: #10182F;">Hi ${user.name},</h2>
+                <p style="font-size: 16px;">Your payment for the car rental has been successfully processed. Below are your rental details:</p>
+                <table style="width: 100%; margin-top: 20px; border-collapse: collapse;">
+                  <tr>
+                    <td style="padding: 10px; border-bottom: 1px solid #eee;"><strong>Car:</strong></td>
+                    <td style="padding: 10px; border-bottom: 1px solid #eee;">${car.make} ${car.model}</td>
+                  </tr>
+                  <tr>
+                    <td style="padding: 10px; border-bottom: 1px solid #eee;"><strong>Start Date:</strong></td>
+                    <td style="padding: 10px; border-bottom: 1px solid #eee;">${formatDate(car.startDate)}</td>
+                  </tr>
+                  <tr>
+                    <td style="padding: 10px; border-bottom: 1px solid #eee;"><strong>End Date:</strong></td>
+                    <td style="padding: 10px; border-bottom: 1px solid #eee;">${formatDate(car.endDate)}</td>
+                  </tr>
+                  <tr>
+                    <td style="padding: 10px; border-bottom: 1px solid #eee;"><strong>Total Price:</strong></td>
+                    <td style="padding: 10px; border-bottom: 1px solid #eee;">₦${payment.amount}</td>
+                  </tr>
+                  <tr>
+                    <td style="padding: 10px;"><strong>Transaction ID:</strong></td>
+                    <td style="padding: 10px;">${event.data.id}</td>
+                  </tr>
+                </table>
+                <p style="margin-top: 30px; font-size: 16px;">We appreciate your business and look forward to serving you again.</p>
+                <div style="margin-top: 40px; text-align: center;">
+                  <a href="https://techyjaunt.com" style="background-color: #10182F; color: #ffffff; padding: 12px 24px; text-decoration: none; border-radius: 5px;">Visit Our Website</a>
+                </div>
+              </div>
+              <div style="background-color: #f1f1f1; text-align: center; padding: 15px; font-size: 12px; color: #777;">
+                &copy; ${new Date().getFullYear()} TechyJaunt. All rights reserved.
+              </div>
+            </div>
+          </div>
+        `;
 
         if (user.email) {
           await sendEmail(user.email, 'Rental Payment Confirmation - TechyJaunt', emailHtml);
