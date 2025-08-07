@@ -48,7 +48,6 @@ exports.makePayment = async (req, res) => {
       phone_number,
       startDate: new Date(startDate),
       endDate: new Date(endDate),
-      flutterwaveTransactionId: undefined, // avoid null insert
     });
 
     const payload = {
@@ -107,14 +106,9 @@ exports.handleFlutterwaveWebhook = async (req, res) => {
 
     if (event.data.status === 'successful' && event.data.amount >= payment.amount) {
       payment.status = 'successful';
+     await payment.save();
 
-      // Avoid saving null or duplicate transaction ID
-      if (event.data.id) {
-        payment.flutterwaveTransactionId = event.data.id;
-      }
-
-      await payment.save();
-
+      // Update car status and user notification
       const car = await Car.findById(payment.car);
       if (car) {
         car.isRented = true;
