@@ -47,7 +47,7 @@ exports.makePayment = async (req, res) => {
       email,
       phone_number,
       startDate: new Date(startDate),
-      endDate: new Date(endDate),
+      endDate: new Date(endDate)
     });
 
     const payload = {
