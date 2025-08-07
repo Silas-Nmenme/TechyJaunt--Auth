@@ -3,12 +3,12 @@ const Flutterwave = require('flutterwave-node-v3');
 const Payment = require('../models/payment.schema.js');
 const Car = require('../models/car.schema.js');
 const User = require('../models/user.schema.js');
-const crypto = require('crypto');
 const sendSms = require('../utils/sendSms.js');
+const sendEmail = require('../utils/sendEmail.js');
 
 const flw = new Flutterwave(process.env.FLW_PUBLIC_KEY, process.env.FLW_SECRET_KEY);
 
-// Format NG date
+// Utility to format date
 function formatDate(date) {
   return new Date(date).toLocaleDateString('en-NG', {
     year: 'numeric',
@@ -17,7 +17,7 @@ function formatDate(date) {
   });
 }
 
-// MAKE PAYMENT 
+// Initiate Flutterwave Payment
 exports.makePayment = async (req, res) => {
   try {
     const carId = req.params.carId;
@@ -32,6 +32,17 @@ exports.makePayment = async (req, res) => {
 
     const tx_ref = `tx-${Date.now()}-${req.user._id}`;
 
+    await Payment.create({
+      user: req.user._id,
+      car: carId,
+      amount: car.price,
+      currency: 'NGN',
+      tx_ref,
+      status: 'pending',
+      rentalStartDate: new Date(startDate),
+      rentalEndDate: new Date(endDate),
+    });
+
     const payload = {
       tx_ref,
       amount: car.price,
@@ -42,16 +53,10 @@ exports.makePayment = async (req, res) => {
         phonenumber: phone_number,
         name: req.user.name || "Customer"
       },
-      meta: {
-        userId: req.user._id.toString(),
-        carId: carId.toString(),
-        startDate,
-        endDate
-      },
       customizations: {
         title: 'Car Rental Payment',
         description: `Payment for ${car.make} ${car.model}`,
-        logo: '../logo/car logo.webp' 
+        logo: '../logo/car-logo.webp'
       }
     };
 
@@ -74,79 +79,105 @@ exports.makePayment = async (req, res) => {
   }
 };
 
-// FLUTTERWAVE WEBHOOK 
+// Handle Flutterwave Webhook
 exports.handleFlutterwaveWebhook = async (req, res) => {
   try {
-    const flutterwaveSignature = req.headers['verif-hash'];
-    const rawBody = req.body.toString(); // req.body is a buffer due to express.raw
-    const computedHash = crypto
-      .createHmac('sha256', process.env.FLW_WEBHOOK_SECRET)
-      .update(rawBody)
-      .digest('hex');
+    const event = req.body;
 
-    // Security: validate webhook signature
-    if (!flutterwaveSignature || flutterwaveSignature !== computedHash) {
-      return res.status(401).json({ message: 'Invalid webhook signature.' });
+    if (!event || !event.data || !event.data.tx_ref) {
+      return res.status(400).json({ message: 'Invalid webhook data' });
     }
 
-    const { event, data } = JSON.parse(rawBody);
+    const txRef = event.data.tx_ref;
+    const payment = await Payment.findOne({ tx_ref: txRef });
+    if (!payment) return res.status(404).json({ message: 'Payment record not found' });
 
-    // Validate event type and success status
-    if (event !== 'charge.completed' || data.status !== 'successful') {
-      return res.status(200).json({ message: 'No action taken. Event not successful charge.' });
+    if (payment.status === 'paid') {
+      return res.status(200).json({ message: 'Payment already processed' });
     }
 
-    const meta = data.meta || {};
-    const tx_ref = data.tx_ref;
+    if (event.data.status === 'successful' && event.data.amount >= payment.amount) {
+      payment.status = 'paid';
+      payment.flutterwaveTransactionId = event.data.id;
+      await payment.save();
 
-    if (!meta.userId || !meta.carId || !tx_ref) {
-      return res.status(400).json({ message: 'Missing metadata (userId, carId, or tx_ref).' });
+      const car = await Car.findById(payment.car);
+      if (car) {
+        car.isRented = true;
+        car.rentedBy = payment.user;
+        car.startDate = payment.rentalStartDate;
+        car.endDate = payment.rentalEndDate;
+        car.totalPrice = payment.amount;
+        car.status = 'approved';
+        await car.save();
+      }
+
+      const user = await User.findById(payment.user);
+      if (user) {
+        const sms = `Hi ${user.name}, your payment for ${car.make} ${car.model} was successful.\nRef: ${txRef}\nAmount: ₦${payment.amount}`;
+        if (user.phoneNumber) {
+          await sendSms(user.phoneNumber, sms, user._id);
+        }
+
+        const emailHtml = `
+  <div style="font-family: Arial, sans-serif; color: #333; padding: 20px; background-color: #f9f9f9;">
+    <div style="max-width: 600px; margin: auto; background: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 10px rgba(0,0,0,0.05);">
+      <div style="background-color: #10182F; padding: 20px; text-align: center;">
+        <h1 style="color: #ffffff; margin: 0;">TechyJaunt Car Rentals</h1>
+      </div>
+      <div style="padding: 30px;">
+        <h2 style="color: #10182F;">Hi ${user.name},</h2>
+        <p style="font-size: 16px;">Your payment for the car rental has been successfully processed. Below are your rental details:</p>
+
+        <table style="width: 100%; margin-top: 20px; border-collapse: collapse;">
+          <tr>
+            <td style="padding: 10px; border-bottom: 1px solid #eee;"><strong>Car:</strong></td>
+            <td style="padding: 10px; border-bottom: 1px solid #eee;">${car.make} ${car.model}</td>
+          </tr>
+          <tr>
+            <td style="padding: 10px; border-bottom: 1px solid #eee;"><strong>Start Date:</strong></td>
+            <td style="padding: 10px; border-bottom: 1px solid #eee;">${formatDate(car.startDate)}</td>
+          </tr>
+          <tr>
+            <td style="padding: 10px; border-bottom: 1px solid #eee;"><strong>End Date:</strong></td>
+            <td style="padding: 10px; border-bottom: 1px solid #eee;">${formatDate(car.endDate)}</td>
+          </tr>
+          <tr>
+            <td style="padding: 10px; border-bottom: 1px solid #eee;"><strong>Total Price:</strong></td>
+            <td style="padding: 10px; border-bottom: 1px solid #eee;">₦${payment.amount}</td>
+          </tr>
+          <tr>
+            <td style="padding: 10px;"><strong>Transaction ID:</strong></td>
+            <td style="padding: 10px;">${event.data.id}</td>
+          </tr>
+        </table>
+
+        <p style="margin-top: 30px; font-size: 16px;">We appreciate your business and look forward to serving you again.</p>
+
+        <div style="margin-top: 40px; text-align: center;">
+          <a href="https://techyjaunt.com" style="background-color: #10182F; color: #ffffff; padding: 12px 24px; text-decoration: none; border-radius: 5px;">Visit Our Website</a>
+        </div>
+      </div>
+      <div style="background-color: #f1f1f1; text-align: center; padding: 15px; font-size: 12px; color: #777;">
+        &copy; ${new Date().getFullYear()} TechyJaunt. All rights reserved.
+      </div>
+    </div>
+  </div>
+`;
+
+        if (user.email) {
+          await sendEmail(user.email, 'Rental Payment Confirmation - TechyJaunt', emailHtml);
+        }
+      }
+
+      return res.status(200).json({ message: 'Payment processed and car rented' });
+    } else {
+      payment.status = 'failed';
+      await payment.save();
+      return res.status(200).json({ message: 'Payment failed or amount mismatch' });
     }
-
-    // Prevent duplicate processing
-    const existing = await Payment.findOne({ tx_ref });
-    if (existing) {
-      return res.status(200).json({ message: 'Payment already processed.' });
-    }
-
-    // Save payment
-    const rentalStart = new Date(meta.startDate || Date.now());
-    const rentalEnd = new Date(meta.endDate || Date.now());
-
-    const newPayment = await Payment.create({
-      user: meta.userId,
-      car: meta.carId,
-      amount: data.amount,
-      currency: data.currency,
-      tx_ref,
-      flutterwaveTransactionId: data.id,
-      status: 'paid',
-      rentalStartDate: rentalStart,
-      rentalEndDate: rentalEnd
-    });
-
-    // Update car rental
-    const car = await Car.findById(meta.carId);
-    if (car) {
-      car.isRented = true;
-      car.rentedBy = meta.userId;
-      car.status = 'approved';
-      car.startDate = rentalStart;
-      car.endDate = rentalEnd;
-      car.totalPrice = data.amount;
-      await car.save();
-    }
-
-    // Notify user
-    const user = await User.findById(meta.userId);
-    if (user?.phoneNumber) {
-      const sms = `Hi ${user.name}, your payment for ${car.make} ${car.model} was successful.\nRef: ${tx_ref}\nAmount: ₦${data.amount}`;
-      await sendSms(user.phoneNumber, sms, user._id);
-    }
-
-    return res.status(200).json({ message: 'Webhook processed successfully.' });
   } catch (error) {
-    console.error('Webhook Error:', error);
-    return res.status(500).json({ message: 'Internal server error.' });
+    console.error('Flutterwave webhook error:', error);
+    return res.status(500).json({ message: 'Internal Server Error' });
   }
 };

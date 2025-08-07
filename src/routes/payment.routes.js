@@ -2,7 +2,6 @@ const express = require('express');
 const router = express.Router();
 const {
   makePayment,
-  verifyPayment,
   handleFlutterwaveWebhook
 } = require('../controller/payment.controller');
 const { isAuthenticated } = require('../middlewares/isAuth');

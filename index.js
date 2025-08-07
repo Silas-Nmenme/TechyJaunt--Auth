@@ -23,7 +23,6 @@ app.use(express.static(path.join(__dirname, 'public')));
 app.get("/", (req, res) => res.send("Welcome To Silas Rental Services"));
 app.use("/api/users", userRouter);
 app.use("/api/cars", carRouter);
-app.use("/api/payment", paymentRouter);
 app.use('/api/webhook', paymentRouter);
 
 // Start the server
