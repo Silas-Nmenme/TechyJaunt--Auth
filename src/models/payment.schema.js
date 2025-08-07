@@ -23,9 +23,6 @@ const paymentSchema = new mongoose.Schema({
   },
   tx_ref: {
     type: String,
-    required: true,
-    unique: true,
-    trim: true
   },
   flutterwaveTransactionId: {
     type: Number,
@@ -33,8 +30,8 @@ const paymentSchema = new mongoose.Schema({
   },
   status: {
     type: String,
-    enum: ['paid', 'failed', 'pending'],
-    default: 'paid'
+    enum: ["pending", "successful", "failed"],
+    default: 'pending'
   },
   rentalStartDate: {
     type: Date,
@@ -44,11 +41,7 @@ const paymentSchema = new mongoose.Schema({
     type: Date,
     required: true
   },
-  notes: {
-    type: String,
-    trim: true,
-    default: null
-  }
+
 }, {
   timestamps: true,
   versionKey: false

@@ -10,8 +10,6 @@ const { isAuthenticated } = require('../middlewares/isAuth');
 // Initiate payment for a car rental
 router.post('/pay/:carId', isAuthenticated, makePayment);
 
-// Flutterwave redirect/callback for client-side confirmation
-router.get('/callback', isAuthenticated, verifyPayment);
 
 // Flutterwave webhook for backend payment confirmation
 router.post(

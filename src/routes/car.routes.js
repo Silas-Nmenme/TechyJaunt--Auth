@@ -10,9 +10,12 @@ const {
 } = require('../controller/admin.controller');
 
 const {
-  rentCar,
-  rentCarWithPayment
+  rentCar
 } = require('../controller/rental.controller');
+
+const {
+  makePayment
+} = require('../controller/payment.controller');
 
 const { isAuthenticated } = require('../middlewares/isAuth');
 
@@ -27,6 +30,6 @@ router.delete('/delete-car/:carId', isAuthenticated, deleteCar);
 
 // Car rental routes
 router.post('/rent/:carId', isAuthenticated, rentCar);              // Without payment
-router.post('/rent-paid/:carId', isAuthenticated, rentCarWithPayment); // With verified payment
+router.post('/rent-paid/:carId', isAuthenticated, makePayment); // With verified payment
 
 module.exports = router;
