@@ -48,7 +48,7 @@ exports.makePayment = async (req, res) => {
       endDate: new Date(endDate)
     };
 
-    await Payment.create(paymentData); // ✅ No flutterwaveTransactionId at this point
+    await Payment.create(paymentData); t
 
     const payload = {
       tx_ref,
