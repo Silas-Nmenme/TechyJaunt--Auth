@@ -1,3 +1,4 @@
+// src/controllers/payment.controller.js
 const axios = require('axios');
 const Flutterwave = require('flutterwave-node-v3');
 const Payment = require('../models/payment.schema.js');
@@ -8,20 +9,23 @@ const sendEmail = require('../utils/sendEmail.js');
 
 const flw = new Flutterwave(process.env.FLW_PUBLIC_KEY, process.env.FLW_SECRET_KEY);
 
-// Format date
-const formatDate = (date) => new Date(date).toLocaleDateString('en-NG', {
-  year: 'numeric',
-  month: 'short',
-  day: 'numeric',
-});
+// Format date nicely
+const formatDate = (date) =>
+  new Date(date).toLocaleDateString('en-NG', {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric',
+  });
 
 // Initiate Flutterwave Payment
 exports.makePayment = async (req, res) => {
   try {
     const carId = req.params.carId;
-    const { email, phone_number, startDate, endDate } = req.body;
+    const { email, phone_number, startDate, endDate, userId: userIdFromBody } = req.body;
 
-    if (!req.user || !req.user._id) {
+    // Prefer authenticated user (req.user), fallback to passed userId for dev
+    const userId = req.user && req.user._id ? req.user._id : userIdFromBody;
+    if (!userId) {
       return res.status(401).json({ message: 'Unauthorized. User not logged in.' });
     }
 
@@ -32,11 +36,11 @@ exports.makePayment = async (req, res) => {
     const car = await Car.findById(carId);
     if (!car) return res.status(404).json({ message: 'Car not found.' });
 
-    const tx_ref = `tx-${Date.now()}-${req.user._id}`;
+    const tx_ref = `tx-${Date.now()}-${userId}`;
 
-    // Create pending payment record (without flutterwaveTransactionId)
+    // Save pending payment
     const paymentData = {
-      user: req.user._id,
+      user: userId,
       car: carId,
       amount: car.price,
       currency: 'NGN',
@@ -45,48 +49,52 @@ exports.makePayment = async (req, res) => {
       email,
       phone_number,
       startDate: new Date(startDate),
-      endDate: new Date(endDate)
+      endDate: new Date(endDate),
     };
 
-    await Payment.create(paymentData); t
+    await Payment.create(paymentData);
 
+    // Flutterwave payload
     const payload = {
       tx_ref,
       amount: car.price,
       currency: 'NGN',
-      redirect_url: process.env.FLW_REDIRECT_URL || "http://localhost:4500/api/payment/flutterwave/callback",
+      redirect_url:
+        process.env.FLW_REDIRECT_URL ||
+        'http://localhost:4500/api/payment/flutterwave/callback',
       customer: {
         email,
         phonenumber: phone_number,
-        name: req.user.name || "Customer"
+        name: req.user && req.user.name ? req.user.name : 'Customer',
       },
       customizations: {
         title: 'Car Rental Payment',
         description: `Payment for ${car.make} ${car.model}`,
-        logo: '../logo/car-logo.webp'
-      }
+        logo: process.env.SITE_LOGO || 'https://example.com/logo.png',
+      },
     };
 
+    // Call Flutterwave API
     const response = await axios.post('https://api.flutterwave.com/v3/payments', payload, {
       headers: {
         Authorization: `Bearer ${process.env.FLW_SECRET_KEY}`,
-        'Content-Type': 'application/json'
-      }
+        'Content-Type': 'application/json',
+      },
     });
 
-    if (response.data.status === 'success') {
+    if (response.data && response.data.status === 'success') {
       return res.status(200).json({ redirectLink: response.data.data.link });
     } else {
+      console.error('Unexpected Flutterwave response:', response.data);
       return res.status(500).json({ message: 'Payment initiation failed.' });
     }
-
   } catch (error) {
-    console.error("Payment Error:", error.message);
+    console.error('Payment Error:', error.message || error);
     return res.status(500).json({ message: 'Internal server error.' });
   }
 };
 
-// Flutterwave Webhook
+// Flutterwave Webhook Handler
 exports.handleFlutterwaveWebhook = async (req, res) => {
   try {
     const event = req.body;
@@ -106,12 +114,12 @@ exports.handleFlutterwaveWebhook = async (req, res) => {
     }
 
     if (event.data.status === 'successful' && event.data.amount >= payment.amount) {
-      // Update payment record safely
+      // Mark payment successful
       payment.status = 'successful';
       payment.flutterwaveTransactionId = flutterwaveId;
       await payment.save();
 
-      // Update car status
+      // Update car
       const car = await Car.findById(payment.car);
       if (car) {
         car.isRented = true;
@@ -123,6 +131,7 @@ exports.handleFlutterwaveWebhook = async (req, res) => {
         await car.save();
       }
 
+      // Notify user
       const user = await User.findById(payment.user);
       if (user) {
         const sms = `Hi ${user.name}, your payment for ${car.make} ${car.model} was successful.\nRef: ${txRef}\nAmount: ₦${payment.amount}`;
@@ -131,48 +140,27 @@ exports.handleFlutterwaveWebhook = async (req, res) => {
         }
 
         const emailHtml = `
-          <div style="font-family: Arial, sans-serif; color: #333; padding: 20px; background-color: #f9f9f9;">
-            <div style="max-width: 600px; margin: auto; background: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 10px rgba(0,0,0,0.05);">
-              <div style="background-color: #10182F; padding: 20px; text-align: center;">
-                <h1 style="color: #ffffff; margin: 0;">TechyJaunt Car Rentals</h1>
-              </div>
-              <div style="padding: 30px;">
-                <h2 style="color: #10182F;">Hi ${user.name},</h2>
-                <p style="font-size: 16px;">Your payment has been successfully processed. Below are your rental details:</p>
-                <table style="width: 100%; margin-top: 20px; border-collapse: collapse;">
-                  <tr><td style="padding: 10px;"><strong>Car:</strong></td><td style="padding: 10px;">${car.make} ${car.model}</td></tr>
-                  <tr><td style="padding: 10px;"><strong>Start Date:</strong></td><td style="padding: 10px;">${formatDate(car.startDate)}</td></tr>
-                  <tr><td style="padding: 10px;"><strong>End Date:</strong></td><td style="padding: 10px;">${formatDate(car.endDate)}</td></tr>
-                  <tr><td style="padding: 10px;"><strong>Amount:</strong></td><td style="padding: 10px;">₦${payment.amount}</td></tr>
-                  <tr><td style="padding: 10px;"><strong>Transaction ID:</strong></td><td style="padding: 10px;">${flutterwaveId}</td></tr>
-                </table>
-                <p style="margin-top: 30px;">We appreciate your business!</p>
-                <div style="margin-top: 30px; text-align: center;">
-                  <a href="https://techyjaunt.com" style="background-color: #10182F; color: #ffffff; padding: 12px 24px; text-decoration: none; border-radius: 5px;">Visit Our Website</a>
-                </div>
-              </div>
-              <div style="background-color: #f1f1f1; text-align: center; padding: 15px; font-size: 12px; color: #777;">
-                &copy; ${new Date().getFullYear()} TechyJaunt. All rights reserved.
-              </div>
-            </div>
-          </div>
+          <h2>Payment Confirmation</h2>
+          <p>Dear ${user.name},</p>
+          <p>Your payment for the ${car.make} ${car.model} was successful.</p>
+          <p><strong>Transaction Ref:</strong> ${txRef}</p>
+          <p><strong>Amount:</strong> ₦${payment.amount}</p>
+          <p><strong>Rental Period:</strong> ${formatDate(payment.startDate)} to ${formatDate(payment.endDate)}</p>
+          <p>Thank you for choosing us!</p>
         `;
-
         if (user.email) {
-          await sendEmail(user.email, 'Rental Payment Confirmation - TechyJaunt', emailHtml);
+          await sendEmail(user.email, 'Rental Payment Confirmation', emailHtml);
         }
       }
 
       return res.status(200).json({ message: 'Payment processed and car rented' });
-
     } else {
       payment.status = 'failed';
       await payment.save();
       return res.status(200).json({ message: 'Payment failed or amount mismatch' });
     }
-
   } catch (error) {
-    console.error('Flutterwave webhook error:', error);
+    console.error('Flutterwave webhook error:', error.message || error);
     return res.status(500).json({ message: 'Internal Server Error' });
   }
 };
