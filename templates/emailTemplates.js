@@ -326,7 +326,7 @@ const emailTemplates = {
                 </div>
                 
                 <p style="text-align: center;">
-                    <a href="#" class="button">Start Browsing Vehicles</a>
+                    <a href="https://silascarrentals.netlify.app" class="button">Start Browsing Vehicles</a>
                 </p>
                 
                 <p>Thank you for choosing Car Rental Service. We look forward to serving you!</p>
@@ -404,7 +404,7 @@ const emailTemplates = {
                 <p>Browse our extensive fleet and book your perfect rental car today!</p>
                 
                 <p style="text-align: center;">
-                    <a href="#" class="button">Browse Our Fleet</a>
+                    <a href="https://silascarrentals.netlify.app" class="button">Browse Our Fleet</a>
                 </p>
             </div>
             <div class="footer">
