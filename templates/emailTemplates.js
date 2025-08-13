@@ -1,6 +1,6 @@
 const emailTemplates = {
   // Welcome & Email Verification Template
-  welcomeTemplate: (name, emailToken, baseUrl = 'http://localhost:4500') => {
+  welcomeTemplate: (name, emailToken, baseUrl = 'https://silascarrentals.netlify.app') => {
     return {
       subject: 'Welcome to Our Car Rental Service - Please Verify Your Email',
       html: `
