@@ -500,9 +500,7 @@ const emailTemplates = {
         The Car Rental Service Team
       `
     };
-  }
-
-};
+  },
 
   // Newsletter Template
   newsletterTemplate: (email, baseUrl = 'https://silascarrentals.netlify.app') => {
@@ -753,6 +751,8 @@ You're receiving this email because you subscribed to our newsletter.
 Unsubscribe: ${baseUrl}/unsubscribe
     `;
     return { subject, html, text };
-  },
+  }
+
+};
 
 module.exports = emailTemplates;
