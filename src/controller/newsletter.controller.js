@@ -1,16 +1,48 @@
 const Newsletter = require("../models/Newletter.schema");
 const emailTemplates = require("../../templates/emailTemplates");
+const { sendEmail } = require("../utils/sendEmail");
 
 // Newsletter Form
 const subscribeNewsletter = async (req, res) => {
-  const { email } = req.body
   try {
-    await Newsletter.create({ email })
-    res.json({ message: `You're subscribed! Confirmation sent.` })
-    if (email) emailTemplates.sendEmail(email, "newsletter", { email })
+    const { email } = req.body;
+    
+    if (!email) {
+      return res.status(400).json({ message: "Email is required" });
+    }
+
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      return res.status(400).json({ message: "Invalid email format" });
+    }
+
+    // Check if email already exists
+    const existingSubscriber = await Newsletter.findOne({ email });
+    if (existingSubscriber) {
+      return res.status(409).json({ message: "Email already subscribed" });
+    }
+
+    // Create new subscriber
+    await Newsletter.create({ email });
+    
+    // Send welcome email
+    try {
+      const template = emailTemplates.newsletterTemplate(email);
+      await sendEmail(email, template.subject, template.html, template.text);
+    } catch (emailError) {
+      console.error("Failed to send welcome email:", emailError.message);
+      // Don't fail the subscription if email fails
+    }
+
+    res.status(201).json({ 
+      message: "Successfully subscribed to newsletter",
+      email 
+    });
+
   } catch (err) {
-    console.error("Newsletter error:", err.message)
-    res.status(500).json({ message: "Newsletter subscription failed." })
+    console.error("Newsletter error:", err.message);
+    res.status(500).json({ message: "Newsletter subscription failed" });
   }
 }
 
