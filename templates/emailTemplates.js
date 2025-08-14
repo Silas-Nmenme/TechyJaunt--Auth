@@ -751,6 +751,57 @@ You're receiving this email because you subscribed to our newsletter.
 Unsubscribe: ${baseUrl}/unsubscribe
     `;
     return { subject, html, text };
+  },
+
+  // Unsubscribe Template
+  unsubscribeTemplate: (name) => {
+    return {
+      subject: 'We’re Sorry to See You Go - Unsubscribe Confirmation',
+      html: `
+        <!DOCTYPE html>
+        <html lang="en">
+        <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>Unsubscribe Confirmation</title>
+            <style>
+                body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px; }
+                .header { background: linear-gradient(135deg, #dc3545 0%, #fd7e14 100%); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0; }
+                .content { background: #f8f9fa; padding: 30px; border-radius: 0 0 10px 10px; }
+                .footer { text-align: center; margin-top: 30px; color: #6c757d; font-size: 14px; }
+            </style>
+        </head>
+        <body>
+            <div class="header">
+                <h1>We're Sorry to See You Go!</h1>
+            </div>
+            <div class="content">
+                <h2>Hello ${name},</h2>
+                <p>We're sorry to see you unsubscribe from our newsletter. Your feedback is important to us, and we would love to know how we can improve.</p>
+                <p>If you have any questions or concerns, please feel free to reach out to our support team.</p>
+                <p>Thank you for being a part of our community!</p>
+            </div>
+            <div class="footer">
+                <p>Best regards,<br>The Car Rental Service Team</p>
+            </div>
+        </body>
+        </html>
+      `,
+      text: `
+        We're Sorry to See You Go - Unsubscribe Confirmation
+        
+        Hello ${name},
+        
+        We're sorry to see you unsubscribe from our newsletter. Your feedback is important to us, and we would love to know how we can improve.
+        
+        If you have any questions or concerns, please feel free to reach out to our support team.
+        
+        Thank you for being a part of our community!
+        
+        Best regards,
+        The Car Rental Service Team
+      `
+    };
   }
 
 };

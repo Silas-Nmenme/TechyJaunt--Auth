@@ -61,8 +61,31 @@ const getAllSubscribers = async (req, res) => {
 const unsubscribeUser = async (req, res) => {
   const { subscriberId } = req.params;
   try {
+    // Find the subscriber before deleting to get email details
+    const subscriber = await Newsletter.findById(subscriberId);
+    
+    if (!subscriber) {
+      return res.status(404).json({ message: "Subscriber not found." });
+    }
+
+    const email = subscriber.email;
+    
+    // Delete the subscriber
     await Newsletter.findByIdAndDelete(subscriberId);
-    res.json({ message: "Successfully unsubscribed from newsletter." });
+    
+    // Send unsubscribe confirmation email using template
+    try {
+      const template = emailTemplates.unsubscribeTemplate(email);
+      await sendTemplateEmail(email, template.subject, template.html, template.text);
+    } catch (emailError) {
+      console.error("Failed to send unsubscribe email:", emailError.message);
+      // Don't fail the unsubscribe if email fails
+    }
+    
+    res.json({ 
+      message: "Successfully unsubscribed from newsletter. A confirmation email has been sent.",
+      email 
+    });
   } catch (err) {
     console.error("Unsubscribe error:", err.message);
     res.status(500).json({ message: "Failed to unsubscribe user." });
