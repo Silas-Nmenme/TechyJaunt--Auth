@@ -29,8 +29,8 @@ const subscribeNewsletter = async (req, res) => {
     // Send welcome email
     try {
       const template = emailTemplates.newsletterTemplate(email);
-      const { sendEmail } = require("../../templates/emailTemplates");
-      await sendEmail(email, template.subject, template.html);
+      const { emailTemplates } = require("../../templates/emailTemplates");
+      await emailTemplates.sendEmail(email, template.subject, template.html);
     } catch (emailError) {
       console.error("Failed to send welcome email:", emailError.message);
       // Don't fail the subscription if email fails
