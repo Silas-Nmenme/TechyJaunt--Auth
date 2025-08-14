@@ -1,6 +1,6 @@
 const Newsletter = require("../models/Newletter.schema");
 const emailTemplates = require("../../templates/emailTemplates");
-
+const { sendEmail } = require("../utils/sendEmail");
 
 // Newsletter Form
 const subscribeNewsletter = async (req, res) => {
@@ -26,11 +26,10 @@ const subscribeNewsletter = async (req, res) => {
     // Create new subscriber
     await Newsletter.create({ email });
     
-    // Send welcome email
+    // Send welcome email using the newsletter template
     try {
       const template = emailTemplates.newsletterTemplate(email);
-      const { emailTemplates } = require("../../templates/emailTemplates");
-      await emailTemplates.sendEmail(email, template.subject, template.html);
+      await sendEmail(email, template.subject, template.html, template.text);
     } catch (emailError) {
       console.error("Failed to send welcome email:", emailError.message);
       // Don't fail the subscription if email fails
@@ -88,7 +87,7 @@ const updateSubscription = async (req, res) => {
 }
 
 module.exports = {
-  Newsletter: subscribeNewsletter,
+  subscribeNewsletter,
   getAllSubscribers,
   unsubscribeUser,
   updateSubscription

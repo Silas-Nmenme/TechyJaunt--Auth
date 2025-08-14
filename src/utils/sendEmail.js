@@ -26,7 +26,7 @@ const sendEmail = async (to, subject, html) => {
     });
 
     const mailOptions = {
-      from: `"TechyJaunt Car Rentals" <${EMAIL_USER}>`,
+      from: `"Silas Car Rentals" <${EMAIL_USER}>`,
       to,
       subject,
       html,

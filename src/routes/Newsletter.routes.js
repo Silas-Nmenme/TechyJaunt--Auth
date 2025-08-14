@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 
 const {
-  Newsletter,
+  subscribeNewsletter,
   getAllSubscribers,
   unsubscribeUser,
   updateSubscription
@@ -11,7 +11,7 @@ const {
 const { isAuthenticated } = require('../middlewares/isAuth');
 
 // Public routes
-router.post('/subscribe', Newsletter);
+router.post('/subscribe', subscribeNewsletter);
 router.get('/subscribers', getAllSubscribers);
 
 // Protected routes
