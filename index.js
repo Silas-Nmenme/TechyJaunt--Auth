@@ -12,6 +12,7 @@ const connectDB = require("./src/config/db");
 const userRouter = require("./src/routes/user.routes");
 const carRouter = require("./src/routes/car.routes");
 const paymentRouter = require("./src/routes/payment.routes");
+const NewsletterRouter = require("./src/routes/newsletter.routes");
 
 const app = express();
 const PORT = process.env.PORT || 4500;
@@ -37,6 +38,7 @@ app.get("/", (req, res) => res.send("Welcome To Silas Rental Services"));
 app.use("/api/users", userRouter);
 app.use("/api/cars", carRouter);
 app.use("/api/payment", paymentRouter); // includes webhook inside payment.routes.js
+app.use("/api/newsletter", NewsletterRouter);
 
 // ===== Start Server After DB Connect =====
 connectDB().then(() => {

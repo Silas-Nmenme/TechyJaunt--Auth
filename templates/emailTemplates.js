@@ -438,7 +438,7 @@ const emailTemplates = {
   // Password Set Confirmation Template
   passwordSetConfirmationTemplate: (name) => {
     return {
-      subject: 'Password Added Successfully - Car Rental Service',
+      subject: 'Password Added Successfully - Silas Car Rental Service',
       html: `
         <!DOCTYPE html>
         <html lang="en">
@@ -503,5 +503,256 @@ const emailTemplates = {
   }
 
 };
+
+  // Newsletter Template
+  newsletterTemplate: (email, baseUrl = 'https://silascarrentals.netlify.app') => {
+    const subject = 'Welcome to Silas Car Rentals Newsletter - Exclusive Deals & Updates';
+    const html = `
+      <!DOCTYPE html>
+      <html lang="en">
+      <head>
+          <meta charset="UTF-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+          <title>Welcome to Silas Car Rentals Newsletter</title>
+          <style>
+              body { 
+                  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+                  line-height: 1.6; 
+                  color: #333; 
+                  margin: 0; 
+                  padding: 0; 
+                  background-color: #f4f4f4;
+              }
+              .container { 
+                  max-width: 700px; 
+                  margin: 0 auto; 
+                  background: #ffffff;
+                  border-radius: 15px;
+                  overflow: hidden;
+                  box-shadow: 0 8px 30px rgba(0,0,0,0.1);
+              }
+              .header { 
+                  background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%); 
+                  color: white; 
+                  padding: 40px 30px; 
+                  text-align: center;
+                  position: relative;
+              }
+              .header::before {
+                  content: '🚗';
+                  font-size: 48px;
+                  display: block;
+                  margin-bottom: 10px;
+              }
+              .header h1 { 
+                  margin: 0; 
+                  font-size: 28px; 
+                  font-weight: 700;
+              }
+              .header p {
+                  margin: 10px 0 0 0;
+                  opacity: 0.9;
+                  font-size: 16px;
+              }
+              .content { 
+                  padding: 40px 30px; 
+              }
+              .welcome-section {
+                  text-align: center;
+                  margin-bottom: 30px;
+              }
+              .welcome-section h2 {
+                  color: #1e3c72;
+                  font-size: 24px;
+                  margin-bottom: 15px;
+              }
+              .welcome-section p {
+                  font-size: 16px;
+                  color: #666;
+                  margin-bottom: 20px;
+              }
+              .benefits-grid {
+                  display: grid;
+                  grid-template-columns: 1fr 1fr;
+                  gap: 20px;
+                  margin: 30px 0;
+              }
+              .benefit-card {
+                  background: #f8f9fa;
+                  padding: 20px;
+                  border-radius: 10px;
+                  text-align: center;
+                  border-left: 4px solid #2a5298;
+              }
+              .benefit-icon {
+                  font-size: 32px;
+                  margin-bottom: 10px;
+              }
+              .benefit-title {
+                  font-weight: 600;
+                  color: #1e3c72;
+                  margin-bottom: 5px;
+              }
+              .cta-section {
+                  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                  color: white;
+                  padding: 30px;
+                  text-align: center;
+                  border-radius: 10px;
+                  margin: 30px 0;
+              }
+              .cta-button {
+                  display: inline-block;
+                  background: #ffffff;
+                  color: #667eea;
+                  padding: 15px 35px;
+                  text-decoration: none;
+                  border-radius: 25px;
+                  font-weight: 600;
+                  margin-top: 15px;
+                  transition: transform 0.3s ease;
+              }
+              .cta-button:hover {
+                  transform: translateY(-2px);
+              }
+              .exclusive-offer {
+                  background: #fff3cd;
+                  border: 1px solid #ffeaa7;
+                  padding: 20px;
+                  border-radius: 10px;
+                  margin: 20px 0;
+                  text-align: center;
+              }
+              .offer-code {
+                  background: #2a5298;
+                  color: white;
+                  padding: 8px 16px;
+                  border-radius: 5px;
+                  font-weight: bold;
+                  font-family: monospace;
+                  letter-spacing: 1px;
+              }
+              .social-links {
+                  text-align: center;
+                  margin-top: 30px;
+                  padding-top: 20px;
+                  border-top: 1px solid #eee;
+              }
+              .social-links a {
+                  display: inline-block;
+                  margin: 0 10px;
+                  color: #1e3c72;
+                  text-decoration: none;
+                  font-size: 14px;
+              }
+              .footer-note {
+                  text-align: center;
+                  margin-top: 20px;
+                  color: #888;
+                  font-size: 14px;
+              }
+              @media (max-width: 600px) {
+                  .benefits-grid {
+                      grid-template-columns: 1fr;
+                  }
+                  .header, .content {
+                      padding: 20px;
+                  }
+              }
+          </style>
+      </head>
+      <body>
+          <div class="container">
+              <div class="header">
+                  <h1>Welcome to Silas Car Rentals Newsletter</h1>
+                  <p>Your gateway to exclusive deals and premium car rental experiences</p>
+              </div>
+              
+              <div class="content">
+                  <div class="welcome-section">
+                      <h2>Welcome aboard, ${email}! 🎉</h2>
+                      <p>Thank you for subscribing to the Silas Car Rentals newsletter. You're now part of an exclusive community that gets first access to our best deals, new vehicle launches, and insider tips for the perfect rental experience.</p>
+                  </div>
+
+                  <div class="exclusive-offer">
+                      <h3>🎁 Welcome Exclusive Offer</h3>
+                      <p>As a thank you for subscribing, enjoy <strong>15% OFF</strong> your first rental!</p>
+                      <p>Use code: <span class="offer-code">WELCOME15</span></p>
+                      <small>Valid for 30 days from subscription date</small>
+                  </div>
+
+                  <div class="benefits-grid">
+                      <div class="benefit-card">
+                          <div class="benefit-icon">💰</div>
+                          <div class="benefit-title">Exclusive Deals</div>
+                          <p>Get subscriber-only discounts and early access to promotions</p>
+                      </div>
+                      <div class="benefit-card">
+                          <div class="benefit-icon">🚗</div>
+                          <div class="benefit-title">New Fleet Alerts</div>
+                          <p>Be the first to know about new luxury vehicles added to our fleet</p>
+                      </div>
+                      <div class="benefit-card">
+                          <div class="benefit-icon">📍</div>
+                          <div class="benefit-title">Location Updates</div>
+                          <p>Discover new pickup locations and service areas</p>
+                      </div>
+                      <div class="benefit-card">
+                          <div class="benefit-icon">📱</div>
+                          <div class="benefit-title">Travel Tips</div>
+                          <p>Receive expert advice on car rental and travel planning</p>
+                      </div>
+                  </div>
+
+                  <div class="cta-section">
+                      <h3>Ready to explore our fleet?</h3>
+                      <p>Browse our premium selection of vehicles and find your perfect match for your next adventure.</p>
+                      <a href="${baseUrl}" class="cta-button">Explore Fleet Now</a>
+                  </div>
+
+                  <div class="social-links">
+                      <a href="#">Facebook</a> | 
+                      <a href="#">Instagram</a> | 
+                      <a href="https://www.linkedin.com/in/silas-onyekachi-572a4a179">LinkedIn</a> | 
+                      <a href="https://wa.link/c73sw8">WhatsApp</a>
+                  </div>
+
+                  <div class="footer-note">
+                      <p>You're receiving this email because you subscribed to the Silas Car Rentals newsletter.</p>
+                      <p>If you no longer wish to receive these updates, you can <a href="${baseUrl}/unsubscribe" style="color: #667eea;">unsubscribe here</a>.</p>
+                  </div>
+              </div>
+          </div>
+      </body>
+      </html>
+    `;
+    const text = `
+Welcome to Silas Car Rentals Newsletter!
+
+Hi ${email},
+
+Thank you for subscribing! You're now part of our exclusive community that gets first access to:
+- 15% OFF your first rental (code: WELCOME15)
+- Exclusive deals and promotions
+- New vehicle alerts
+- Travel tips and location updates
+- Early access to special offers
+
+Visit our website to explore our premium fleet: ${baseUrl}
+
+Follow us on social media for daily updates:
+Facebook, Instagram, Twitter, WhatsApp: +234-810-758-6167
+
+Need help? Contact us anytime at support@silascarrentals.com
+
+Best regards,
+The Silas Car Rentals Team
+
+---
+You're receiving this email because you subscribed to our newsletter.
+Unsubscribe: ${baseUrl}/unsubscribe
+    `;
+    return { subject, html, text };
+  },
 
 module.exports = emailTemplates;
