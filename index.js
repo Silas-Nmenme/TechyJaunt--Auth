@@ -12,7 +12,7 @@ const connectDB = require("./src/config/db");
 const userRouter = require("./src/routes/user.routes");
 const carRouter = require("./src/routes/car.routes");
 const paymentRouter = require("./src/routes/payment.routes");
-const NewsletterRouter = require("./src/routes/newsletter.routes");
+const NewsletterRouter = require("./src/routes/Newsletter.routes");
 
 const app = express();
 const PORT = process.env.PORT || 4500;
@@ -43,10 +43,10 @@ app.use("/api/newsletter", NewsletterRouter);
 // ===== Start Server After DB Connect =====
 connectDB().then(() => {
   app.listen(PORT, () => {
-    console.log(`🚀 Server running on http://localhost:${PORT}`);
-    console.log(`🌐 Allowed frontend origin: ${FRONTEND_URL}`);
+    console.log(`Server running on http://localhost:${PORT}`);
+    console.log(`Allowed frontend origin: ${FRONTEND_URL}`);
   });
 }).catch(err => {
-  console.error("❌ MongoDB connection failed:", err.message);
+  console.error("MongoDB connection failed:", err.message);
   process.exit(1);
 });
