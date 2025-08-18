@@ -286,7 +286,7 @@ const initiateGoogleAuth = async (req, res) => {
     const oauth2Client = new google.auth.OAuth2(
       process.env.GOOGLE_CLIENT_ID,
       process.env.GOOGLE_CLIENT_SECRET,
-      process.env.GOOGLE_REDIRECT_URI || 'http://localhost:4500/api/auth/google/callback'
+      process.env.GOOGLE_REDIRECT_URI || 'https://techyjaunt-auth-go43.onrender.com/api/auth/google/callback'
     );
 
     // Generate the url that will be used for the consent dialog
@@ -332,7 +332,7 @@ const handleGoogleCallback = async (req, res) => {
     const oauth2Client = new google.auth.OAuth2(
       process.env.GOOGLE_CLIENT_ID,
       process.env.GOOGLE_CLIENT_SECRET,
-      process.env.GOOGLE_REDIRECT_URI || 'http://localhost:4500/api/auth/google/callback'
+      process.env.GOOGLE_REDIRECT_URI || 'ttps://techyjaunt-auth-go43.onrender.com/api/auth/google/callback'
     );
 
     // Exchange authorization code for access token
@@ -422,7 +422,7 @@ const handleGoogleCallback = async (req, res) => {
     }
 
     // Option 1: Redirect to frontend with token in URL params (not recommended for production)
-    // const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:4500';
+    // const frontendUrl = process.env.FRONTEND_URL || 'https://silascarrentals.netlify.app"';
     // return res.redirect(`${frontendUrl}/auth/success?token=${token}`);
 
     // Option 2: Redirect to frontend with success page that fetches token
