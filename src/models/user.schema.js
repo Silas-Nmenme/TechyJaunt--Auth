@@ -46,7 +46,6 @@ const userSchema = new mongoose.Schema({
   },
   phoneNumber: {
     type: String,
-    required: [true, 'Phone number is required for SMS confirmations'],
     trim: true
   },
   isAdmin: {
