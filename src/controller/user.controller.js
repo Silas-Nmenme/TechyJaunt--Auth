@@ -287,7 +287,7 @@ const initiateGoogleAuth = async (req, res) => {
     const oauth2Client = new google.auth.OAuth2(
       process.env.GOOGLE_CLIENT_ID,
       process.env.GOOGLE_CLIENT_SECRET,
-      process.env.GOOGLE_REDIRECT_URI || 'https://techyjaunt-auth-go43.onrender.com/api/user/google/callback'
+      process.env.GOOGLE_REDIRECT_URI || 'https://techyjaunt-auth-go43.onrender.com/api/users/google/callback'
     );
 
     // Generate the url that will be used for the consent dialog
@@ -333,7 +333,7 @@ const handleGoogleCallback = async (req, res) => {
     const oauth2Client = new google.auth.OAuth2(
       process.env.GOOGLE_CLIENT_ID,
       process.env.GOOGLE_CLIENT_SECRET,
-      process.env.GOOGLE_REDIRECT_URI || 'https://techyjaunt-auth-go43.onrender.com/api/user/google/callback'
+      process.env.GOOGLE_REDIRECT_URI || 'https://techyjaunt-auth-go43.onrender.com/api/users/google/callback'
     );
 
     // Exchange authorization code for access token
