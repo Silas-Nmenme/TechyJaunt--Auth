@@ -605,6 +605,7 @@ const getUserProfile = async (req, res) => {
         isAdmin: user.isAdmin,
         isVerified: user.isVerified,
         provider: user.provider,
+        phoneNumber: user.phoneNumber,
         avatar: user.avatar,
         profilePicture: user.profilePicture,
         createdAt: user.createdAt,
