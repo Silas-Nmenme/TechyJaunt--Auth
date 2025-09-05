@@ -27,6 +27,7 @@ router.patch('/make-admin/:userId', isAuth, isAdmin, makeAdmin);
 router.post('/forgot-password', forgotPassword);
 router.post('/reset-password/:userId', resetPassword);
 router.post('/verify-otp', verifyOtp);
+router.post('/verify-email/:token', verifyEmail);
 
 // Server-side Google OAuth routes
 router.get('/google', initiateGoogleAuth);
