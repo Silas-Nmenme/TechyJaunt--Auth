@@ -102,6 +102,12 @@ const verifyEmail = async (req, res) => {
       successTemplate.text
     );
 
+    // For GET requests (from email link), redirect to login
+    if (req.method === 'GET') {
+      return res.redirect(`${process.env.FRONTEND_URL || 'https://silascarrentals.netlify.app'}/login.html`);
+    }
+
+    // For POST requests (from frontend), return JSON
     return res.status(200).json({message: "User Verified Successfully", user})
   } catch (err) {
     console.log(err);

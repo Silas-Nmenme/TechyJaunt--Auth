@@ -35,7 +35,7 @@ const emailTemplates = {
                 </div>
                 
                 <p>Or click the button below to verify automatically:</p>
-                <a href="${baseUrl}/verify-email.html/${emailToken}" class="button">Verify Email Address</a>
+                <a href="${baseUrl}/api/users/verify-email/${emailToken}" class="button">Verify Email Address</a>
                 
                 <p><strong>What's next?</strong></p>
                 <ul>
