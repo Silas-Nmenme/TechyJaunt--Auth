@@ -211,6 +211,21 @@ const getAllUsers = async (req, res) => {
   }
 };
 
+//Search Users by name 
+const searchUsers = async (req, res) => {
+  const { name } = req.query;
+  try {
+    const user = await User.find({ name: name });
+    if (!user) {
+      return res.status(404).json({ message: "User not found"});
+    }
+    return res.status(200).json({ user });
+  } catch (err) {
+    console.error("Error searching users;", err);
+    return res.status(500).json({ message: "Internal Server Error" });
+  }
+  };
+
 //Forgot password
 const forgotPassword = async (req, res) => {
   const { email } = req.body;
@@ -781,4 +796,5 @@ module.exports = {
   deleteProfilePicture,
   updateProfile,
   getAllUsers,
+  searchUsers,
 };
