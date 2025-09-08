@@ -200,7 +200,18 @@ const makeAdmin = async (req, res) => {
   }
 };
 
+//Get All Users
+const getAllUsers = async (req, res) => {
+  try {
+    const users = await User.find();
+    return res.status(200).json({ users });
+  } catch (error) {
+    console.error("Error fetching users:", error);
+    return res.status(500).json({ message: "Internal Server Error" });
+  }
+};
 
+//Forgot password
 const forgotPassword = async (req, res) => {
   const { email } = req.body;
   // Validate input
@@ -769,4 +780,5 @@ module.exports = {
   getUserProfile,
   deleteProfilePicture,
   updateProfile,
+  getAllUsers,
 };
