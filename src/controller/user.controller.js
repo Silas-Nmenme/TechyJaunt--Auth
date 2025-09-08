@@ -156,23 +156,50 @@ const login = async (req, res) => {
 };
 
 
-//Make Admin
+// Make Admin
 const makeAdmin = async (req, res) => {
   const { userId } = req.params;
+
   try {
+    // Check if userId is provided
+    if (!userId) {
+      return res.status(400).json({ message: "User ID is required" });
+    }
+
+    // Find user by ID
     const user = await User.findById(userId);
     if (!user) {
       return res.status(404).json({ message: "User not found" });
     }
+
+    // Check if already admin
+    if (user.isAdmin) {
+      return res
+        .status(200)
+        .json({ message: "User is already an admin", user });
+    }
+
+    // Optional: Prevent self-promotion
+    if (req.user && req.user.id === userId) {
+      return res.status(403).json({
+        message: "You cannot promote yourself to admin",
+      });
+    }
+
+    // Promote to admin
     user.isAdmin = true;
     await user.save();
-    return res
-      .status(200)
-      .json({ message: "User promoted to admin successfully", user });
+
+    return res.status(200).json({
+      message: "User promoted to admin successfully",
+      user,
+    });
   } catch (error) {
+    console.error("Error in makeAdmin:", error);
     return res.status(500).json({ message: "Internal Server Error", error });
   }
 };
+
 
 const forgotPassword = async (req, res) => {
   const { email } = req.body;
