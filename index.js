@@ -13,6 +13,7 @@ const userRouter = require("./src/routes/user.routes");
 const carRouter = require("./src/routes/car.routes");
 const paymentRouter = require("./src/routes/payment.routes");
 const NewsletterRouter = require("./src/routes/Newsletter.routes");
+const contactRouter = require("./src/routes/contact.routes");
 
 const app = express();
 const PORT = process.env.PORT || 4500;
@@ -39,6 +40,7 @@ app.use("/api/users", userRouter);
 app.use("/api/cars", carRouter);
 app.use("/api/payment", paymentRouter); // includes webhook inside payment.routes.js
 app.use("/api/newsletter", NewsletterRouter);
+app.use("/api", contactRouter); // Contact routes
 
 // ===== Start Server After DB Connect =====
 connectDB().then(() => {
