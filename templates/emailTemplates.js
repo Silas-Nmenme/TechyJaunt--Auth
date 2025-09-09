@@ -71,6 +71,109 @@ const emailTemplates = {
     };
   },
 
+  // Contact Form User Confirmation Template
+  contactUserTemplate: (fullName) => {
+    return {
+      subject: 'Thank you for contacting Silas Car Rentals!',
+      html: `
+        <!DOCTYPE html>
+        <html lang="en">
+        <head>
+          <meta charset="UTF-8" />
+          <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+          <title>Thank You for Contacting Us</title>
+          <style>
+            body { font-family: Arial, sans-serif; background: #f8f9fa; color: #333; max-width: 600px; margin: 0 auto; padding: 20px; }
+            .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0; }
+            .content { background: white; padding: 30px; border-radius: 0 0 10px 10px; }
+            .footer { text-align: center; margin-top: 30px; color: #6c757d; font-size: 14px; }
+            .button { display: inline-block; background: #28a745; color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; margin-top: 20px; }
+          </style>
+        </head>
+        <body>
+          <div class="header">
+            <h1>Thank You for Contacting Silas Car Rentals!</h1>
+          </div>
+          <div class="content">
+            <h2>Hello ${fullName},</h2>
+            <p>We have received your message and will get back to you shortly.</p>
+            <p>In the meantime, feel free to browse our fleet and find your perfect rental car.</p>
+            <p><a href="https://silascarrentals.netlify.app" class="button">Browse Our Fleet</a></p>
+          </div>
+          <div class="footer">
+            <p>Best regards,<br>The Silas Car Rentals Team</p>
+          </div>
+        </body>
+        </html>
+      `,
+      text: `
+        Thank you for contacting Silas Car Rentals, ${fullName}!
+
+        We have received your message and will get back to you shortly.
+
+        In the meantime, feel free to browse our fleet and find your perfect rental car.
+
+        Visit: https://silascarrentals.netlify.app
+
+        Best regards,
+        The Silas Car Rentals Team
+      `
+    };
+  },
+
+  // Contact Form Admin Notification Template
+  contactAdminTemplate: (fullName, email, phoneNumber, message) => {
+    return {
+      subject: `New Contact Form Submission from ${fullName}`,
+      html: `
+        <!DOCTYPE html>
+        <html lang="en">
+        <head>
+          <meta charset="UTF-8" />
+          <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+          <title>New Contact Form Submission</title>
+          <style>
+            body { font-family: Arial, sans-serif; background: #f8f9fa; color: #333; max-width: 600px; margin: 0 auto; padding: 20px; }
+            .header { background: linear-gradient(135deg, #764ba2 0%, #667eea 100%); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0; }
+            .content { background: white; padding: 30px; border-radius: 0 0 10px 10px; }
+            .footer { text-align: center; margin-top: 30px; color: #6c757d; font-size: 14px; }
+            .info { margin-bottom: 15px; }
+            .label { font-weight: bold; }
+          </style>
+        </head>
+        <body>
+          <div class="header">
+            <h1>New Contact Form Submission</h1>
+          </div>
+          <div class="content">
+            <p>You have received a new message from the contact form on your website.</p>
+            <div class="info"><span class="label">Name:</span> ${fullName}</div>
+            <div class="info"><span class="label">Email:</span> ${email}</div>
+            <div class="info"><span class="label">Phone Number:</span> ${phoneNumber}</div>
+            <div class="info"><span class="label">Message:</span></div>
+            <p>${message}</p>
+          </div>
+          <div class="footer">
+            <p>Best regards,<br>Silas Car Rentals Website</p>
+          </div>
+        </body>
+        </html>
+      `,
+      text: `
+        New Contact Form Submission
+
+        Name: ${fullName}
+        Email: ${email}
+        Phone Number: ${phoneNumber}
+        Message:
+        ${message}
+
+        Best regards,
+        Silas Car Rentals Website
+      `
+    };
+  },
+
   // Login Notification Template
   loginNotificationTemplate: (name, loginTime, ipAddress = 'Unknown', location = 'Unknown') => {
     return {

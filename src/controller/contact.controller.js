@@ -1,6 +1,8 @@
 // controllers/contact.controller.js
+
 const Contact = require("../models/contact.schema");
 const sendEmail = require("../utils/sendEmail");
+const emailTemplates = require("../../templates/emailTemplates");
 
 // Handle Contact Form Submission
 const sendMessage = async (req, res) => {
@@ -16,18 +18,13 @@ const sendMessage = async (req, res) => {
     const contact = new Contact({ fullName, email, phoneNumber, message });
     await contact.save();
 
-    // Send Email to Admin using sendEmail utility
-    const subject = `New Contact Message from ${fullName}`;
-    const html = `
-      <h3>New Contact Form Submission</h3>
-      <p><strong>Name:</strong> ${fullName}</p>
-      <p><strong>Email:</strong> ${email}</p>
-      <p><strong>Phone:</strong> ${phoneNumber}</p>
-      <p><strong>Message:</strong></p>
-      <p>${message}</p>
-    `;
+    // Send Email to User confirming receipt
+    const userEmailContent = emailTemplates.contactUserTemplate(fullName);
+    await sendEmail(email, userEmailContent.subject, userEmailContent.html, userEmailContent.text);
 
-    await sendEmail(process.env.ADMIN_EMAIL, subject, html);
+    // Send Email to Admin with contact details
+    const adminEmailContent = emailTemplates.contactAdminTemplate(fullName, email, phoneNumber, message);
+    await sendEmail(process.env.ADMIN_EMAIL, adminEmailContent.subject, adminEmailContent.html, adminEmailContent.text);
 
     return res.status(201).json({ success: true, message: "Message sent successfully" });
   } catch (error) {
