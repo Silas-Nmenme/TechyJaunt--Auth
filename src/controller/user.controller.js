@@ -642,7 +642,7 @@ const uploadProfilePicture = async (req, res) => {
 // Get User Profile (including profile picture)
 const getUserProfile = async (req, res) => {
   try {
-    const userId = req.user.id;
+    const userId = req.query.userId || req.user.id;
     const user = await User.findById(userId).select('-password -otp -emailToken -token');
 
     if (!user) {
