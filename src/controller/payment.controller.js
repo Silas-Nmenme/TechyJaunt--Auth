@@ -61,7 +61,7 @@ exports.makePayment = async (req, res) => {
       currency: 'NGN',
       redirect_url:
         process.env.FLW_REDIRECT_URL ||
-        'http://localhost:4500/api/payment/flutterwave/callback',
+        'https://techyjaunt-auth-go43.onrender.com/api/payment/flutterwave/callback',
       customer: {
         email,
         phonenumber: phone_number,
