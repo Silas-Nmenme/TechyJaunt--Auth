@@ -36,7 +36,7 @@ const calculateTotal = (pricePerDay, startDate, endDate) => {
 // Initiate Flutterwave Payment
 exports.makePayment = async (req, res) => {
   try {
-    const { carIds, email, phone_number, startDate, endDate, userId: userIdFromBody } = req.body;
+    let { carIds, email, phone_number, startDate, endDate, userId: userIdFromBody } = req.body;
 
     // Prefer authenticated user (req.user), fallback to passed userId for dev
     const userId = req.user && req.user._id ? req.user._id : userIdFromBody;
@@ -44,8 +44,15 @@ exports.makePayment = async (req, res) => {
       return res.status(401).json({ message: 'Unauthorized. User not logged in.' });
     }
 
-    if (!Array.isArray(carIds) || carIds.length === 0 || !email || !phone_number || !startDate || !endDate) {
-      return res.status(400).json({ message: 'All fields are required, carIds must be an array.' });
+    // Allow carIds to be a single ID or an array of IDs
+    if (!carIds) {
+      return res.status(400).json({ message: 'All fields are required, carIds must be provided.' });
+    }
+    if (!Array.isArray(carIds)) {
+      carIds = [carIds];
+    }
+    if (carIds.length === 0 || !email || !phone_number || !startDate || !endDate) {
+      return res.status(400).json({ message: 'All fields are required.' });
     }
 
     const cars = await Car.find({ _id: { $in: carIds } });
