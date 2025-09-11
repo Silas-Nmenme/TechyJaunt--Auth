@@ -39,21 +39,37 @@ const calculateTotal = (pricePerDay, startDate, endDate) => {
 const generateReceiptHtml = async (user, cars, payment, txRef, transactionId) => {
   let html = await fs.readFile(path.join(__dirname, '../../templates/receipt.html'), 'utf8');
 
-  // Build car details HTML as a table
-  let carDetailsHtml = '<table class="table table-striped">';
-  carDetailsHtml += '<thead><tr><th>Car</th><th>Rental Start</th><th>Rental End</th><th>Total Paid</th></tr></thead>';
-  carDetailsHtml += '<tbody>';
-  for (let i = 0; i < cars.length; i++) {
-    const car = cars[i];
+  let carDetailsHtml = '';
+  if (cars.length === 1) {
+    const car = cars[0];
+    const days = calculateDays(payment.startDate, payment.endDate);
     const carAmount = calculateTotal(car.price, payment.startDate, payment.endDate);
-    carDetailsHtml += `<tr>`;
-    carDetailsHtml += `<td>${car.make} ${car.model} (${car.year})</td>`;
-    carDetailsHtml += `<td>${formatDate(payment.startDate)}</td>`;
-    carDetailsHtml += `<td>${formatDate(payment.endDate)}</td>`;
-    carDetailsHtml += `<td>₦${carAmount}</td>`;
-    carDetailsHtml += `</tr>`;
+    carDetailsHtml += `<div class="info-pair" style="background:#f8f9fa; border-radius:8px; padding:15px; margin-bottom:15px;">`;
+    carDetailsHtml += `<p><strong>Car:</strong> ${car.make} ${car.model} (${car.year})</p>`;
+    carDetailsHtml += `<p><strong>Price per Day:</strong> ₦${car.price}</p>`;
+    carDetailsHtml += `<p><strong>Rental Start:</strong> ${formatDate(payment.startDate)}</p>`;
+    carDetailsHtml += `<p><strong>Rental End:</strong> ${formatDate(payment.endDate)}</p>`;
+    carDetailsHtml += `<p><strong>Number of Days:</strong> ${days}</p>`;
+    carDetailsHtml += `<p><strong>Total Paid:</strong> ₦${carAmount}</p>`;
+    carDetailsHtml += `</div>`;
+  } else if (cars.length > 1) {
+    carDetailsHtml += '<table class="table table-striped">';
+    carDetailsHtml += '<thead><tr><th>Car</th><th>Rental Start</th><th>Rental End</th><th>Total Paid</th></tr></thead>';
+    carDetailsHtml += '<tbody>';
+    for (let i = 0; i < cars.length; i++) {
+      const car = cars[i];
+      const carAmount = calculateTotal(car.price, payment.startDate, payment.endDate);
+      carDetailsHtml += `<tr>`;
+      carDetailsHtml += `<td>${car.make} ${car.model} (${car.year})</td>`;
+      carDetailsHtml += `<td>${formatDate(payment.startDate)}</td>`;
+      carDetailsHtml += `<td>${formatDate(payment.endDate)}</td>`;
+      carDetailsHtml += `<td>₦${carAmount}</td>`;
+      carDetailsHtml += `</tr>`;
+    }
+    carDetailsHtml += '</tbody></table>';
+  } else {
+    carDetailsHtml = '<p>No cars rented.</p>';
   }
-  carDetailsHtml += '</tbody></table>';
 
   html = html.replace(/{{customer_name}}/g, user.name || '');
   html = html.replace(/{{customer_email}}/g, user.email || '');
