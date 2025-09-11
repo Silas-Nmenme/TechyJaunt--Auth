@@ -17,11 +17,26 @@ const formatDate = (date) =>
     day: 'numeric',
   });
 
+// Calculate number of days between dates
+const calculateDays = (startDate, endDate) => {
+  if (!startDate || !endDate) return 1;
+  const start = new Date(startDate);
+  const end = new Date(endDate);
+  const days = Math.ceil((end - start) / (1000 * 60 * 60 * 24));
+  return Math.max(1, days);
+};
+
+// Calculate total amount
+const calculateTotal = (pricePerDay, startDate, endDate) => {
+  if (!pricePerDay) return 0;
+  const days = calculateDays(startDate, endDate);
+  return pricePerDay * days;
+};
+
 // Initiate Flutterwave Payment
 exports.makePayment = async (req, res) => {
   try {
-    const carId = req.params.carId;
-    const { email, phone_number, startDate, endDate, userId: userIdFromBody } = req.body;
+    const { carIds, email, phone_number, startDate, endDate, userId: userIdFromBody } = req.body;
 
     // Prefer authenticated user (req.user), fallback to passed userId for dev
     const userId = req.user && req.user._id ? req.user._id : userIdFromBody;
@@ -29,20 +44,25 @@ exports.makePayment = async (req, res) => {
       return res.status(401).json({ message: 'Unauthorized. User not logged in.' });
     }
 
-    if (!email || !phone_number || !startDate || !endDate) {
-      return res.status(400).json({ message: 'All fields are required.' });
+    if (!Array.isArray(carIds) || carIds.length === 0 || !email || !phone_number || !startDate || !endDate) {
+      return res.status(400).json({ message: 'All fields are required, carIds must be an array.' });
     }
 
-    const car = await Car.findById(carId);
-    if (!car) return res.status(404).json({ message: 'Car not found.' });
+    const cars = await Car.find({ _id: { $in: carIds } });
+    if (cars.length !== carIds.length) {
+      return res.status(404).json({ message: 'One or more cars not found.' });
+    }
+
+    // Calculate total amount
+    const totalAmount = cars.reduce((sum, car) => sum + calculateTotal(car.price, startDate, endDate), 0);
 
     const tx_ref = `tx-${Date.now()}-${userId}`;
 
     // Save pending payment
     const paymentData = {
       user: userId,
-      car: carId,
-      amount: car.price,
+      cars: carIds,
+      amount: totalAmount,
       currency: 'NGN',
       tx_ref,
       status: 'pending',
@@ -57,7 +77,7 @@ exports.makePayment = async (req, res) => {
     // Flutterwave payload
     const payload = {
       tx_ref,
-      amount: car.price,
+      amount: totalAmount,
       currency: 'NGN',
       redirect_url:
         process.env.FLW_REDIRECT_URL ||
@@ -69,7 +89,7 @@ exports.makePayment = async (req, res) => {
       },
       customizations: {
         title: 'Car Rental Payment',
-        description: `Payment for ${car.make} ${car.model}`,
+        description: `Payment for ${cars.length} car(s) rental`,
         logo: process.env.SITE_LOGO || 'https://example.com/logo.png',
       },
     };
@@ -119,14 +139,14 @@ exports.handleFlutterwaveWebhook = async (req, res) => {
       payment.flutterwaveTransactionId = flutterwaveId;
       await payment.save();
 
-      // Update car
-      const car = await Car.findById(payment.car);
-      if (car) {
+      // Update cars
+      const cars = await Car.find({ _id: { $in: payment.cars } });
+      for (const car of cars) {
         car.isRented = true;
         car.rentedBy = payment.user;
         car.startDate = payment.startDate;
         car.endDate = payment.endDate;
-        car.totalPrice = payment.amount;
+        car.totalPrice = calculateTotal(car.price, payment.startDate, payment.endDate);
         car.status = 'approved';
         await car.save();
       }
@@ -134,7 +154,8 @@ exports.handleFlutterwaveWebhook = async (req, res) => {
       // Notify user
       const user = await User.findById(payment.user);
       if (user) {
-        const sms = `Hi ${user.name}, your payment for ${car.make} ${car.model} was successful.\nRef: ${txRef}\nAmount: ₦${payment.amount}`;
+        const carList = cars.map(c => `${c.make} ${c.model}`).join(', ');
+        const sms = `Hi ${user.name}, your payment for ${carList} was successful.\nRef: ${txRef}\nAmount: ₦${payment.amount}`;
         if (user.phoneNumber) {
           await sendSms(user.phoneNumber, sms, user._id);
         }
@@ -142,7 +163,7 @@ exports.handleFlutterwaveWebhook = async (req, res) => {
         const emailHtml = `
           <h2>Payment Confirmation</h2>
           <p>Dear ${user.name},</p>
-          <p>Your payment for the ${car.make} ${car.model} was successful.</p>
+          <p>Your payment for the ${carList} was successful.</p>
           <p><strong>Transaction Ref:</strong> ${txRef}</p>
           <p><strong>Amount:</strong> ₦${payment.amount}</p>
           <p><strong>Rental Period:</strong> ${formatDate(payment.startDate)} to ${formatDate(payment.endDate)}</p>
@@ -153,7 +174,7 @@ exports.handleFlutterwaveWebhook = async (req, res) => {
         }
       }
 
-      return res.status(200).json({ message: 'Payment processed and car rented' });
+      return res.status(200).json({ message: 'Payment processed and cars rented' });
     } else {
       payment.status = 'failed';
       await payment.save();
@@ -212,14 +233,14 @@ exports.handleCallback = async (req, res) => {
         payment.flutterwaveTransactionId = transaction.id;
         await payment.save();
 
-        // Update car
-        const car = await Car.findById(payment.car);
-        if (car) {
+        // Update cars
+        const cars = await Car.find({ _id: { $in: payment.cars } });
+        for (const car of cars) {
           car.isRented = true;
           car.rentedBy = payment.user;
           car.startDate = payment.startDate;
           car.endDate = payment.endDate;
-          car.totalPrice = payment.amount;
+          car.totalPrice = calculateTotal(car.price, payment.startDate, payment.endDate);
           car.status = 'approved';
           await car.save();
         }
@@ -227,7 +248,8 @@ exports.handleCallback = async (req, res) => {
         // Notify user
         const user = await User.findById(payment.user);
         if (user) {
-          const sms = `Hi ${user.name}, your payment for ${car.make} ${car.model} was successful.\nRef: ${tx_ref}\nAmount: ₦${payment.amount}`;
+          const carList = cars.map(c => `${c.make} ${c.model}`).join(', ');
+          const sms = `Hi ${user.name}, your payment for ${carList} was successful.\nRef: ${tx_ref}\nAmount: ₦${payment.amount}`;
           if (user.phoneNumber) {
             await sendSms(user.phoneNumber, sms, user._id);
           }
@@ -235,7 +257,7 @@ exports.handleCallback = async (req, res) => {
           const emailHtml = `
             <h2>Payment Confirmation</h2>
             <p>Dear ${user.name},</p>
-            <p>Your payment for the ${car.make} ${car.model} was successful.</p>
+            <p>Your payment for the ${carList} was successful.</p>
             <p><strong>Transaction Ref:</strong> ${tx_ref}</p>
             <p><strong>Amount:</strong> ₦${payment.amount}</p>
             <p><strong>Rental Period:</strong> ${formatDate(payment.startDate)} to ${formatDate(payment.endDate)}</p>
@@ -251,7 +273,7 @@ exports.handleCallback = async (req, res) => {
     } else {
       // Update payment to failed if not already
       if (payment.status !== 'failed') {
-        payment.status = 'failed';
+        // payment.status = 'failed';
         await payment.save();
       }
 

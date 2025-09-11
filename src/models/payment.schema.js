@@ -6,11 +6,11 @@ const paymentSchema = new mongoose.Schema({
     ref: 'User',
     required: true
   },
-  car: {
+  cars: [{
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Car',
     required: true
-  },
+  }],
   amount: {
     type: Number,
     required: true,

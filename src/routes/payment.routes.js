@@ -8,10 +8,10 @@ const {
 } = require('../controller/payment.controller');
 const { isAuthenticated } = require('../middlewares/isAuth');
 
-// Initiate payment for a car rental
-// Matches frontend: /api/payment/pay/:carId
+// Initiate payment for car rental(s)
+// Matches frontend: /api/payment/pay
 
-router.post('/pay/:carId', isAuthenticated, makePayment);
+router.post('/pay', isAuthenticated, makePayment);
 
 
 // Flutterwave webhook for payment confirmation
