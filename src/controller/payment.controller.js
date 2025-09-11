@@ -187,7 +187,11 @@ exports.handleCallback = async (req, res) => {
       },
     });
 
+    console.log('Callback: Flutterwave response for tx_ref:', tx_ref, response.data);
+
     const transactions = response.data.data;
+    console.log('Callback: Transactions array:', transactions);
+
     if (!transactions || transactions.length === 0) {
       console.log('Callback: No transaction found for tx_ref:', tx_ref);
       if (payment.status !== 'failed') {
@@ -198,8 +202,9 @@ exports.handleCallback = async (req, res) => {
     }
 
     const transaction = transactions[0]; // Assuming the first one is the relevant transaction
+    console.log('Callback: Transaction details:', transaction);
 
-    if (transaction && (transaction.status === 'successful' || transaction.status === 'completed') && transaction.amount >= payment.amount) {
+    if (transaction && (transaction.status === 'successful' || transaction.status === 'completed' || transaction.status === 'success') && transaction.amount >= payment.amount) {
       console.log('Callback: Payment successful for tx_ref:', tx_ref);
       // Update payment if not already
       if (payment.status !== 'successful') {
