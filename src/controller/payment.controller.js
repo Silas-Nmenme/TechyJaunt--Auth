@@ -170,24 +170,37 @@ exports.handleCallback = async (req, res) => {
   try {
     const { tx_ref } = req.query;
     if (!tx_ref) {
-      return res.redirect('https://silascarrentals.netlify.app/payment-failed.html');
+      console.log('Callback: No tx_ref provided');
+      return res.redirect('https://silascarrentals.netlify.app/payment-failed.htm');
     }
 
     const payment = await Payment.findOne({ tx_ref });
     if (!payment) {
-      return res.redirect('https://silascarrentals.netlify.app/payment-failed.html');
+      console.log('Callback: Payment record not found for tx_ref:', tx_ref);
+      return res.redirect('https://silascarrentals.netlify.app/payment-failed.htm');
     }
 
-    // Verify with Flutterwave
-    const response = await axios.get(`https://api.flutterwave.com/v3/transactions/${tx_ref}/verify`, {
+    // Verify with Flutterwave using tx_ref to get transaction details
+    const response = await axios.get(`https://api.flutterwave.com/v3/transactions?tx_ref=${tx_ref}`, {
       headers: {
         Authorization: `Bearer ${process.env.FLW_SECRET_KEY}`,
       },
     });
 
-    const transaction = response.data.data;
+    const transactions = response.data.data;
+    if (!transactions || transactions.length === 0) {
+      console.log('Callback: No transaction found for tx_ref:', tx_ref);
+      if (payment.status !== 'failed') {
+        payment.status = 'failed';
+        await payment.save();
+      }
+      return res.redirect('https://silascarrentals.netlify.app/payment-failed.htm');
+    }
+
+    const transaction = transactions[0]; // Assuming the first one is the relevant transaction
 
     if (transaction && (transaction.status === 'successful' || transaction.status === 'completed') && transaction.amount >= payment.amount) {
+      console.log('Callback: Payment successful for tx_ref:', tx_ref);
       // Update payment if not already
       if (payment.status !== 'successful') {
         payment.status = 'successful';
