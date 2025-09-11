@@ -187,7 +187,7 @@ exports.handleCallback = async (req, res) => {
 
     const transaction = response.data.data;
 
-    if (transaction && transaction.status === 'successful' && transaction.amount >= payment.amount) {
+    if (transaction && (transaction.status === 'successful' || transaction.status === 'completed') && transaction.amount >= payment.amount) {
       // Update payment if not already
       if (payment.status !== 'successful') {
         payment.status = 'successful';
