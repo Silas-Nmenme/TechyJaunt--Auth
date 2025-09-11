@@ -6,6 +6,8 @@ const Car = require('../models/car.schema.js');
 const User = require('../models/user.schema.js');
 const sendSms = require('../utils/sendSms.js');
 const sendEmail = require('../utils/sendEmail.js');
+const fs = require('fs').promises;
+const path = require('path');
 
 const flw = new Flutterwave(process.env.FLW_PUBLIC_KEY, process.env.FLW_SECRET_KEY);
 
@@ -31,6 +33,22 @@ const calculateTotal = (pricePerDay, startDate, endDate) => {
   if (!pricePerDay) return 0;
   const days = calculateDays(startDate, endDate);
   return pricePerDay * days;
+};
+
+// Generate receipt HTML from template
+const generateReceiptHtml = async (user, cars, payment, txRef, transactionId) => {
+  let html = await fs.readFile(path.join(__dirname, '../../templates/receipt.html'), 'utf8');
+  const carList = cars.map(c => `${c.make} ${c.model} (${c.year})`).join(', ');
+  html = html.replace(/{{customer_name}}/g, user.name || '');
+  html = html.replace(/{{customer_email}}/g, user.email || '');
+  html = html.replace(/{{customer_phone}}/g, user.phoneNumber || '');
+  html = html.replace('{{car_make}} {{car_model}} ({{car_year}})', carList);
+  html = html.replace(/{{start_date}}/g, formatDate(payment.startDate));
+  html = html.replace(/{{end_date}}/g, formatDate(payment.endDate));
+  html = html.replace(/{{amount}}/g, payment.amount);
+  html = html.replace(/{{tx_ref}}/g, txRef);
+  html = html.replace(/{{transaction_id}}/g, transactionId || '');
+  return html;
 };
 
 // Initiate Flutterwave Payment
@@ -167,15 +185,7 @@ exports.handleFlutterwaveWebhook = async (req, res) => {
           await sendSms(user.phoneNumber, sms, user._id);
         }
 
-        const emailHtml = `
-          <h2>Payment Confirmation</h2>
-          <p>Dear ${user.name},</p>
-          <p>Your payment for the ${carList} was successful.</p>
-          <p><strong>Transaction Ref:</strong> ${txRef}</p>
-          <p><strong>Amount:</strong> ₦${payment.amount}</p>
-          <p><strong>Rental Period:</strong> ${formatDate(payment.startDate)} to ${formatDate(payment.endDate)}</p>
-          <p>Thank you for choosing us!</p>
-        `;
+        const emailHtml = await generateReceiptHtml(user, cars, payment, txRef, flutterwaveId);
         if (user.email) {
           await sendEmail(user.email, 'Rental Payment Confirmation', emailHtml);
         }
@@ -261,15 +271,7 @@ exports.handleCallback = async (req, res) => {
             await sendSms(user.phoneNumber, sms, user._id);
           }
 
-          const emailHtml = `
-            <h2>Payment Confirmation</h2>
-            <p>Dear ${user.name},</p>
-            <p>Your payment for the ${carList} was successful.</p>
-            <p><strong>Transaction Ref:</strong> ${tx_ref}</p>
-            <p><strong>Amount:</strong> ₦${payment.amount}</p>
-            <p><strong>Rental Period:</strong> ${formatDate(payment.startDate)} to ${formatDate(payment.endDate)}</p>
-            <p>Thank you for choosing us!</p>
-          `;
+          const emailHtml = await generateReceiptHtml(user, cars, payment, tx_ref, transaction.id);
           if (user.email) {
             await sendEmail(user.email, 'Rental Payment Confirmation', emailHtml);
           }
