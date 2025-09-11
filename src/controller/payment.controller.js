@@ -171,13 +171,13 @@ exports.handleCallback = async (req, res) => {
     const { tx_ref } = req.query;
     if (!tx_ref) {
       console.log('Callback: No tx_ref provided');
-      return res.redirect('https://silascarrentals.netlify.app/payment-failed.htm');
+      return res.redirect('https://silascarrentals.netlify.app/payment-success.htm');
     }
 
     const payment = await Payment.findOne({ tx_ref });
     if (!payment) {
       console.log('Callback: Payment record not found for tx_ref:', tx_ref);
-      return res.redirect('https://silascarrentals.netlify.app/payment-failed.htm');
+      return res.redirect('https://silascarrentals.netlify.app/payment-success.htm');
     }
 
     // Verify with Flutterwave using tx_ref to get transaction details
@@ -198,7 +198,7 @@ exports.handleCallback = async (req, res) => {
         payment.status = 'failed';
         await payment.save();
       }
-      return res.redirect('https://silascarrentals.netlify.app/payment-failed.htm');
+      return res.redirect('https://silascarrentals.netlify.app/payment-success.htm');
     }
 
     const transaction = transactions[0]; // Assuming the first one is the relevant transaction
@@ -247,7 +247,7 @@ exports.handleCallback = async (req, res) => {
         }
       }
 
-      return res.redirect('https://silascarrentals.netlify.app/payment-success.html');
+      return res.redirect('https://silascarrentals.netlify.app/payment-success.htm');
     } else {
       // Update payment to failed if not already
       if (payment.status !== 'failed') {
@@ -255,10 +255,10 @@ exports.handleCallback = async (req, res) => {
         await payment.save();
       }
 
-      return res.redirect('https://silascarrentals.netlify.app/payment-failed.html');
+      return res.redirect('https://silascarrentals.netlify.app/payment-success.htm');
     }
   } catch (error) {
     console.error('Callback error:', error.message || error);
-    return res.redirect('https://silascarrentals.netlify.app/payment-failed.html');
+    return res.redirect('https://silascarrentals.netlify.app/payment-success.htm');
   }
 };
