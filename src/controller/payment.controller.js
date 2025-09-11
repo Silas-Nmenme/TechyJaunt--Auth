@@ -39,16 +39,21 @@ const calculateTotal = (pricePerDay, startDate, endDate) => {
 const generateReceiptHtml = async (user, cars, payment, txRef, transactionId) => {
   let html = await fs.readFile(path.join(__dirname, '../../templates/receipt.html'), 'utf8');
 
-  // Build car details HTML
-  let carDetailsHtml = '';
+  // Build car details HTML as a table
+  let carDetailsHtml = '<table class="table table-striped">';
+  carDetailsHtml += '<thead><tr><th>Car</th><th>Rental Start</th><th>Rental End</th><th>Total Paid</th></tr></thead>';
+  carDetailsHtml += '<tbody>';
   for (let i = 0; i < cars.length; i++) {
     const car = cars[i];
     const carAmount = calculateTotal(car.price, payment.startDate, payment.endDate);
-    carDetailsHtml += `<div class="info-pair animate__animated animate__slideInUp" data-aos="fade-left" data-aos-delay="${700 + i * 100}"><span class="label">Car:</span><span class="value">${car.make} ${car.model} (${car.year})</span></div>`;
-    carDetailsHtml += `<div class="info-pair animate__animated animate__slideInUp" data-aos="fade-left" data-aos-delay="${700 + i * 100 + 50}"><span class="label">Rental Start:</span><span class="value">${formatDate(payment.startDate)}</span></div>`;
-    carDetailsHtml += `<div class="info-pair animate__animated animate__slideInUp" data-aos="fade-left" data-aos-delay="${700 + i * 100 + 100}"><span class="label">Rental End:</span><span class="value">${formatDate(payment.endDate)}</span></div>`;
-    carDetailsHtml += `<div class="info-pair animate__animated animate__slideInUp" data-aos="fade-left" data-aos-delay="${700 + i * 100 + 150}"><span class="label">Total Paid:</span><span class="value">₦${carAmount}</span></div>`;
+    carDetailsHtml += `<tr>`;
+    carDetailsHtml += `<td>${car.make} ${car.model} (${car.year})</td>`;
+    carDetailsHtml += `<td>${formatDate(payment.startDate)}</td>`;
+    carDetailsHtml += `<td>${formatDate(payment.endDate)}</td>`;
+    carDetailsHtml += `<td>₦${carAmount}</td>`;
+    carDetailsHtml += `</tr>`;
   }
+  carDetailsHtml += '</tbody></table>';
 
   html = html.replace(/{{customer_name}}/g, user.name || '');
   html = html.replace(/{{customer_email}}/g, user.email || '');
