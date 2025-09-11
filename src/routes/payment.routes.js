@@ -3,7 +3,8 @@ const express = require('express');
 const router = express.Router();
 const {
   makePayment,
-  handleFlutterwaveWebhook
+  handleFlutterwaveWebhook,
+  handleCallback
 } = require('../controller/payment.controller');
 const { isAuthenticated } = require('../middlewares/isAuth');
 
@@ -16,8 +17,11 @@ router.post('/pay/:carId', isAuthenticated, makePayment);
 // Flutterwave webhook for payment confirmation
 router.post(
   '/webhook/flutterwave',
-  express.raw({ type: 'application/json' }), 
+  express.raw({ type: 'application/json' }),
   handleFlutterwaveWebhook
 );
+
+// Flutterwave callback for user redirection
+router.get('/flutterwave/callback', handleCallback);
 
 module.exports = router;

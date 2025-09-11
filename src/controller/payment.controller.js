@@ -164,3 +164,83 @@ exports.handleFlutterwaveWebhook = async (req, res) => {
     return res.status(500).json({ message: 'Internal Server Error' });
   }
 };
+
+// Flutterwave Callback Handler for User Redirection
+exports.handleCallback = async (req, res) => {
+  try {
+    const { tx_ref } = req.query;
+    if (!tx_ref) {
+      return res.redirect('https://silascarrentals.netlify.app/payment-failed.html');
+    }
+
+    const payment = await Payment.findOne({ tx_ref });
+    if (!payment) {
+      return res.redirect('https://silascarrentals.netlify.app/payment-failed.html');
+    }
+
+    // Verify with Flutterwave
+    const response = await axios.get(`https://api.flutterwave.com/v3/transactions/${tx_ref}/verify`, {
+      headers: {
+        Authorization: `Bearer ${process.env.FLW_SECRET_KEY}`,
+      },
+    });
+
+    const transaction = response.data.data;
+
+    if (transaction && transaction.status === 'successful' && transaction.amount >= payment.amount) {
+      // Update payment if not already
+      if (payment.status !== 'successful') {
+        payment.status = 'successful';
+        payment.flutterwaveTransactionId = transaction.id;
+        await payment.save();
+
+        // Update car
+        const car = await Car.findById(payment.car);
+        if (car) {
+          car.isRented = true;
+          car.rentedBy = payment.user;
+          car.startDate = payment.startDate;
+          car.endDate = payment.endDate;
+          car.totalPrice = payment.amount;
+          car.status = 'approved';
+          await car.save();
+        }
+
+        // Notify user
+        const user = await User.findById(payment.user);
+        if (user) {
+          const sms = `Hi ${user.name}, your payment for ${car.make} ${car.model} was successful.\nRef: ${tx_ref}\nAmount: ₦${payment.amount}`;
+          if (user.phoneNumber) {
+            await sendSms(user.phoneNumber, sms, user._id);
+          }
+
+          const emailHtml = `
+            <h2>Payment Confirmation</h2>
+            <p>Dear ${user.name},</p>
+            <p>Your payment for the ${car.make} ${car.model} was successful.</p>
+            <p><strong>Transaction Ref:</strong> ${tx_ref}</p>
+            <p><strong>Amount:</strong> ₦${payment.amount}</p>
+            <p><strong>Rental Period:</strong> ${formatDate(payment.startDate)} to ${formatDate(payment.endDate)}</p>
+            <p>Thank you for choosing us!</p>
+          `;
+          if (user.email) {
+            await sendEmail(user.email, 'Rental Payment Confirmation', emailHtml);
+          }
+        }
+      }
+
+      return res.redirect('https://silascarrentals.netlify.app/payment-success.html');
+    } else {
+      // Update payment to failed if not already
+      if (payment.status !== 'failed') {
+        payment.status = 'failed';
+        await payment.save();
+      }
+
+      return res.redirect('https://silascarrentals.netlify.app/payment-failed.html');
+    }
+  } catch (error) {
+    console.error('Callback error:', error.message || error);
+    return res.redirect('https://silascarrentals.netlify.app/payment-failed.html');
+  }
+};
