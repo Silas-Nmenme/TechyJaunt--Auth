@@ -44,7 +44,7 @@ const generateReceiptHtml = async (user, cars, payment, txRef, transactionId) =>
   for (let i = 0; i < cars.length; i++) {
     const car = cars[i];
     const carAmount = calculateTotal(car.price, payment.startDate, payment.endDate);
-    carDetailsHtml += `<div class="info-pair animate__animated animate__slideInUp" data-aos="fade-left" data-aos-delay="${700 + i * 100}"><span class="label">Car ${i + 1}:</span><span class="value">${car.make} ${car.model} (${car.year})</span></div>`;
+    carDetailsHtml += `<div class="info-pair animate__animated animate__slideInUp" data-aos="fade-left" data-aos-delay="${700 + i * 100}"><span class="label">Car:</span><span class="value">${car.make} ${car.model} (${car.year})</span></div>`;
     carDetailsHtml += `<div class="info-pair animate__animated animate__slideInUp" data-aos="fade-left" data-aos-delay="${700 + i * 100 + 50}"><span class="label">Rental Start:</span><span class="value">${formatDate(payment.startDate)}</span></div>`;
     carDetailsHtml += `<div class="info-pair animate__animated animate__slideInUp" data-aos="fade-left" data-aos-delay="${700 + i * 100 + 100}"><span class="label">Rental End:</span><span class="value">${formatDate(payment.endDate)}</span></div>`;
     carDetailsHtml += `<div class="info-pair animate__animated animate__slideInUp" data-aos="fade-left" data-aos-delay="${700 + i * 100 + 150}"><span class="label">Total Paid:</span><span class="value">₦${carAmount}</span></div>`;
