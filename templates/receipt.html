@@ -171,10 +171,31 @@
 
     <div class="section animate__animated animate__fadeInRight" data-aos="fade-up" data-aos-delay="600">
       <h3>Car Rental Details</h3>
-      <div class="info-pair animate__animated animate__slideInUp" data-aos="fade-left" data-aos-delay="700"><span class="label">Car:</span><span class="value">{{car_make}} {{car_model}} ({{car_year}})</span></div>
-      <div class="info-pair animate__animated animate__slideInUp" data-aos="fade-left" data-aos-delay="800"><span class="label">Rental Start:</span><span class="value">{{start_date}}</span></div>
-      <div class="info-pair animate__animated animate__slideInUp" data-aos="fade-left" data-aos-delay="900"><span class="label">Rental End:</span><span class="value">{{end_date}}</span></div>
-      <div class="info-pair animate__animated animate__slideInUp" data-aos="fade-left" data-aos-delay="1000"><span class="label">Total Paid:</span><span class="value">₦{{amount}}</span></div>
+      {% if cars and cars|length > 0 %}
+        {% for car in cars %}
+          <div class="info-pair animate__animated animate__slideInUp" data-aos="fade-left" data-aos-delay="{{ 700 + loop.index0 * 100 }}">
+            <span class="label">Car {{ loop.index }}:</span>
+            <span class="value">{{ car.make }} {{ car.model }} ({{ car.year }})</span>
+          </div>
+          <div class="info-pair animate__animated animate__slideInUp" data-aos="fade-left" data-aos-delay="{{ 700 + loop.index0 * 100 + 50 }}">
+            <span class="label">Rental Start:</span>
+            <span class="value">{{ car.start_date }}</span>
+          </div>
+          <div class="info-pair animate__animated animate__slideInUp" data-aos="fade-left" data-aos-delay="{{ 700 + loop.index0 * 100 + 100 }}">
+            <span class="label">Rental End:</span>
+            <span class="value">{{ car.end_date }}</span>
+          </div>
+          <div class="info-pair animate__animated animate__slideInUp" data-aos="fade-left" data-aos-delay="{{ 700 + loop.index0 * 100 + 150 }}">
+            <span class="label">Total Paid:</span>
+            <span class="value">₦{{ car.amount }}</span>
+          </div>
+        {% endfor %}
+      {% else %}
+        <div class="info-pair animate__animated animate__slideInUp" data-aos="fade-left" data-aos-delay="700"><span class="label">Car:</span><span class="value">{{car_make}} {{car_model}} ({{car_year}})</span></div>
+        <div class="info-pair animate__animated animate__slideInUp" data-aos="fade-left" data-aos-delay="800"><span class="label">Rental Start:</span><span class="value">{{start_date}}</span></div>
+        <div class="info-pair animate__animated animate__slideInUp" data-aos="fade-left" data-aos-delay="900"><span class="label">Rental End:</span><span class="value">{{end_date}}</span></div>
+        <div class="info-pair animate__animated animate__slideInUp" data-aos="fade-left" data-aos-delay="1000"><span class="label">Total Paid:</span><span class="value">₦{{amount}}</span></div>
+      {% endif %}
     </div>
 
     <div class="section animate__animated animate__fadeInLeft" data-aos="fade-up" data-aos-delay="1100">
