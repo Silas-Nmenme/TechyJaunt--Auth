@@ -69,7 +69,7 @@ exports.makePayment = async (req, res) => {
       tx_ref,
       amount: totalAmount,
       currency: 'NGN',
-      redirect_url: process.env.FLW_REDIRECT_URL || "http://localhost:4500/api/payment/flutterwave/callback",
+      redirect_url: "https://silascarrentals.netlify.app/payment-success.html",
       customer: {
         email,
         phonenumber: phone_number,
