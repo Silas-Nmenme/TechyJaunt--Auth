@@ -9,64 +9,234 @@ const emailTemplates = {
         <head>
             <meta charset="UTF-8">
             <meta name="viewport" content="width=device-width, initial-scale=1.0">
-            <title>Welcome to Car Rental Service</title>
+            <title>Welcome to Silas Car Rentals</title>
+            <!-- Bootstrap CSS CDN -->
+            <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+            <!-- Animate.css CDN for animations -->
+            <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css">
+            <!-- AOS (Animate On Scroll) CDN for scroll animations -->
+            <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
+            <!-- Font Awesome for icons -->
+            <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
             <style>
-                body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px; }
-                .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0; }
-                .content { background: #f8f9fa; padding: 30px; border-radius: 0 0 10px 10px; }
-                .button { display: inline-block; background: #28a745; color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; margin: 20px 0; }
-                .token-box { background: #e9ecef; padding: 15px; border-radius: 5px; margin: 20px 0; text-align: center; font-family: monospace; }
-                .footer { text-align: center; margin-top: 30px; color: #6c757d; font-size: 14px; }
+                body {
+                    font-family: 'Segoe UI', 'Helvetica Neue', sans-serif;
+                    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                    margin: 0;
+                    padding: 40px 20px;
+                    color: #333;
+                    min-height: 100vh;
+                }
+                .email-wrapper {
+                    max-width: 680px;
+                    margin: auto;
+                    background: #ffffff;
+                    border-radius: 20px;
+                    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+                    padding: 40px;
+                    transform: scale(0.95);
+                    transition: transform 0.5s ease;
+                }
+                .email-wrapper:hover {
+                    transform: scale(1);
+                }
+                .header {
+                    text-align: center;
+                    border-bottom: 2px solid #eee;
+                    padding-bottom: 20px;
+                    margin-bottom: 30px;
+                }
+                .header h1 {
+                    color: #2b70fa;
+                    margin: 0;
+                    font-size: 32px;
+                    font-weight: bold;
+                    text-shadow: 0 2px 4px rgba(0,0,0,0.1);
+                }
+                .header p {
+                    color: #666;
+                    font-size: 18px;
+                    margin-top: 10px;
+                }
+                .section {
+                    margin-bottom: 30px;
+                }
+                .section h2 {
+                    color: #2b70fa;
+                    font-size: 24px;
+                    margin-bottom: 15px;
+                    border-bottom: 2px solid #ddd;
+                    padding-bottom: 5px;
+                    position: relative;
+                }
+                .section h2::after {
+                    content: '';
+                    position: absolute;
+                    bottom: -2px;
+                    left: 0;
+                    width: 50px;
+                    height: 2px;
+                    background: linear-gradient(90deg, #2b70fa, #764ba2);
+                }
+                .token-box {
+                    background: linear-gradient(135deg, #f1f6ff 0%, #e0f2fe 100%);
+                    border-left: 6px solid #2b70fa;
+                    padding: 20px;
+                    margin: 20px 0;
+                    border-radius: 12px;
+                    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+                    text-align: center;
+                    font-family: 'Courier New', monospace;
+                    font-size: 18px;
+                    font-weight: bold;
+                    color: #2b70fa;
+                }
+                .button {
+                    display: inline-block;
+                    background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+                    color: white;
+                    padding: 15px 35px;
+                    text-decoration: none;
+                    border-radius: 25px;
+                    margin: 20px 0;
+                    font-weight: bold;
+                    box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+                    transition: transform 0.3s ease;
+                }
+                .button:hover {
+                    transform: translateY(-2px);
+                    box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+                }
+                .features-list {
+                    background: #f8f9fa;
+                    padding: 20px;
+                    border-radius: 10px;
+                    margin: 20px 0;
+                }
+                .features-list ul {
+                    list-style: none;
+                    padding: 0;
+                }
+                .features-list li {
+                    padding: 8px 0;
+                    border-bottom: 1px solid #eee;
+                }
+                .features-list li:last-child {
+                    border-bottom: none;
+                }
+                .features-list li i {
+                    color: #28a745;
+                    margin-right: 10px;
+                }
+                .footer {
+                    text-align: center;
+                    margin-top: 40px;
+                    font-size: 0.95em;
+                    color: #777;
+                    border-top: 2px solid #eee;
+                    padding-top: 20px;
+                }
+                .animate-fade-in {
+                    animation: fadeIn 1s ease-in;
+                }
+                .animate-slide-up {
+                    animation: slideInUp 0.8s ease-out;
+                }
+                .animate-bounce-in {
+                    animation: bounceIn 1s ease-out;
+                }
+                @keyframes fadeIn {
+                    from { opacity: 0; }
+                    to { opacity: 1; }
+                }
+                @keyframes slideInUp {
+                    from { transform: translateY(30px); opacity: 0; }
+                    to { transform: translateY(0); opacity: 1; }
+                }
+                @keyframes bounceIn {
+                    0% { transform: scale(0.3); opacity: 0; }
+                    50% { transform: scale(1.05); }
+                    70% { transform: scale(0.9); }
+                    100% { transform: scale(1); opacity: 1; }
+                }
             </style>
         </head>
         <body>
-            <div class="header">
-                <h1>🚗 Welcome to Car Rental Service!</h1>
-            </div>
-            <div class="content">
-                <h2>Hello ${name}!</h2>
-                <p>Thank you for signing up with our Car Rental Service. We're excited to have you on board!</p>
-                
-                <p><strong>To complete your registration, please verify your email address:</strong></p>
-                
-                <div class="token-box">
-                    <strong>Verification Token:</strong><br>
-                    <code>${emailToken}</code>
+            <div class="email-wrapper animate__animated animate__fadeInUp">
+                <div class="header animate__animated animate__bounceIn" data-aos="zoom-in">
+                    <h1><i class="fas fa-car"></i> Welcome to Silas Car Rentals!</h1>
+                    <p>Your journey starts here</p>
                 </div>
-                
-                <p>Or click the button below to verify automatically:</p>
-                <a href="${baseUrl}/api/users/verify-email/${emailToken}" class="button">Verify Email Address</a>
-                
-                <p><strong>What's next?</strong></p>
-                <ul>
-                    <li>✅ Browse our extensive fleet of vehicles</li>
-                    <li>✅ Book your perfect rental car</li>
-                    <li>✅ Enjoy seamless pickup and drop-off</li>
-                    <li>✅ Access exclusive member benefits</li>
-                </ul>
-                
-                <p>If you didn't create this account, please ignore this email.</p>
+
+                <div class="section animate__animated animate__fadeInLeft" data-aos="fade-up" data-aos-delay="200">
+                    <h2><i class="fas fa-user-check"></i> Hello ${name}!</h2>
+                    <p>Thank you for signing up with Silas Car Rentals. We're thrilled to have you join our community of satisfied customers!</p>
+                    <p><strong>To complete your registration and unlock full access, please verify your email address:</strong></p>
+                </div>
+
+                <div class="section animate__animated animate__fadeInRight" data-aos="fade-up" data-aos-delay="400">
+                    <div class="token-box animate__animated animate__pulse" data-aos="flip-up" data-aos-delay="500">
+                        <i class="fas fa-key"></i> <strong>Verification Token:</strong><br>
+                        <code>${emailToken}</code>
+                    </div>
+                    <p style="text-align: center;">Or click the button below to verify automatically:</p>
+                    <div style="text-align: center;">
+                        <a href="${baseUrl}/api/users/verify-email/${emailToken}" class="button animate__animated animate__bounceIn" data-aos="zoom-in" data-aos-delay="600">
+                            <i class="fas fa-envelope-open"></i> Verify Email Address
+                        </a>
+                    </div>
+                </div>
+
+                <div class="section animate__animated animate__fadeInLeft" data-aos="fade-up" data-aos-delay="700">
+                    <h2><i class="fas fa-road"></i> What's Next?</h2>
+                    <div class="features-list">
+                        <ul>
+                            <li><i class="fas fa-search"></i> Browse our extensive fleet of premium vehicles</li>
+                            <li><i class="fas fa-calendar-check"></i> Book your perfect rental car with ease</li>
+                            <li><i class="fas fa-handshake"></i> Enjoy seamless pickup and drop-off services</li>
+                            <li><i class="fas fa-star"></i> Access exclusive member benefits and discounts</li>
+                        </ul>
+                    </div>
+                    <p>If you didn't create this account, please ignore this email.</p>
+                </div>
+
+                <div class="footer animate__animated animate__fadeIn" data-aos="fade-in" data-aos-delay="800">
+                    <p>Best regards,<br>The Silas Car Rentals Team</p>
+                    <p><small>This verification link will expire in 24 hours for security reasons.</small></p>
+                </div>
             </div>
-            <div class="footer">
-                <p>Best regards,<br>The Car Rental Service Team</p>
-                <p><small>This verification link will expire in 24 hours for security reasons.</small></p>
-            </div>
+
+            <!-- AOS Script -->
+            <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
+            <script>
+                AOS.init();
+            </script>
         </body>
         </html>
       `,
       text: `
-        Welcome to Car Rental Service!
-        
+        Welcome to Silas Car Rentals!
+
         Hello ${name},
-        
-        Thank you for signing up! To complete your registration, please verify your email address using this token: ${emailToken}
-        
-        Or visit: ${baseUrl}/verify-email/${emailToken}
-        
+
+        Thank you for signing up! We're thrilled to have you join our community.
+
+        To complete your registration, please verify your email address using this token: ${emailToken}
+
+        Or visit: ${baseUrl}/api/users/verify-email/${emailToken}
+
+        What's next?
+        - Browse our extensive fleet of premium vehicles
+        - Book your perfect rental car with ease
+        - Enjoy seamless pickup and drop-off services
+        - Access exclusive member benefits and discounts
+
         If you didn't create this account, please ignore this email.
-        
+
         Best regards,
-        The Car Rental Service Team
+        The Silas Car Rentals Team
+
+        This verification link will expire in 24 hours for security reasons.
       `
     };
   },
