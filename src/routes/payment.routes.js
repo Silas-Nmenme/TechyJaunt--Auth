@@ -1,27 +1,20 @@
-// src/routes/payment.routes.js
 const express = require('express');
 const router = express.Router();
 const {
   makePayment,
-  handleFlutterwaveWebhook,
-  handleCallback
+  handleFlutterwaveWebhook
 } = require('../controller/payment.controller');
 const { isAuthenticated } = require('../middlewares/isAuth');
 
-// Initiate payment for car rental(s)
-// Matches frontend: /api/payment/pay
-
-router.post('/pay', isAuthenticated, makePayment);
+// Initiate payment for a car rental
+router.post('/pay/:carId', isAuthenticated, makePayment);
 
 
-// Flutterwave webhook for payment confirmation
+// Flutterwave webhook for backend payment confirmation
 router.post(
   '/webhook/flutterwave',
-  express.raw({ type: 'application/json' }),
+  express.raw({ type: 'application/json' }), // Required for Flutterwave signature validation
   handleFlutterwaveWebhook
 );
-
-// Flutterwave callback for user redirection
-router.get('/flutterwave/callback', handleCallback);
 
 module.exports = router;
