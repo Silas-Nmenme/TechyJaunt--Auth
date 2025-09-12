@@ -602,47 +602,117 @@ const emailTemplates = {
         <!DOCTYPE html>
         <html lang="en">
         <head>
-            <meta charset="UTF-8">
-            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <meta charset="UTF-8" />
+            <meta name="viewport" content="width=device-width, initial-scale=1" />
             <title>Password Reset</title>
+            <!-- Bootstrap CSS CDN -->
+            <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
+            <!-- Animate.css CDN for animations -->
+            <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css" />
+            <!-- Font Awesome for icons -->
+            <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
             <style>
-                body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px; }
-                .header { background: linear-gradient(135deg, #dc3545 0%, #fd7e14 100%); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0; }
-                .content { background: #f8f9fa; padding: 30px; border-radius: 0 0 10px 10px; }
-                .otp-box { background: #fff; padding: 20px; border-radius: 10px; margin: 20px 0; text-align: center; border: 3px solid #dc3545; }
-                .otp-code { font-size: 32px; font-weight: bold; color: #dc3545; letter-spacing: 5px; margin: 10px 0; }
-                .warning { background: #f8d7da; padding: 15px; border-radius: 5px; margin: 20px 0; border-left: 4px solid #dc3545; }
-                .footer { text-align: center; margin-top: 30px; color: #6c757d; font-size: 14px; }
+                body {
+                    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+                    background: linear-gradient(135deg, #dc3545 0%, #fd7e14 100%);
+                    margin: 0;
+                    padding: 40px 20px;
+                    color: #fff;
+                    min-height: 100vh;
+                }
+                .email-wrapper {
+                    max-width: 600px;
+                    margin: auto;
+                    background: #fff;
+                    border-radius: 15px;
+                    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+                    padding: 30px 40px;
+                    color: #333;
+                    transform: scale(0.95);
+                    transition: transform 0.5s ease;
+                }
+                .email-wrapper:hover {
+                    transform: scale(1);
+                }
+                .header {
+                    text-align: center;
+                    background: linear-gradient(135deg, #dc3545 0%, #fd7e14 100%);
+                    color: white;
+                    padding: 30px;
+                    border-radius: 15px 15px 0 0;
+                    margin: -30px -40px 30px -40px;
+                }
+                .header h1 {
+                    margin: 0;
+                    font-size: 32px;
+                    font-weight: bold;
+                    text-shadow: 0 2px 6px rgba(0,0,0,0.3);
+                }
+                .content h2 {
+                    font-weight: 600;
+                    margin-bottom: 20px;
+                }
+                .otp-box {
+                    background: #fff;
+                    border: 3px solid #dc3545;
+                    border-radius: 12px;
+                    padding: 25px;
+                    margin: 20px 0;
+                    text-align: center;
+                    box-shadow: 0 4px 12px rgba(220, 53, 69, 0.4);
+                }
+                .otp-code {
+                    font-size: 36px;
+                    font-weight: 700;
+                    color: #dc3545;
+                    letter-spacing: 8px;
+                    margin: 15px 0;
+                    font-family: 'Courier New', Courier, monospace;
+                }
+                .warning {
+                    background: #f8d7da;
+                    border-left: 6px solid #dc3545;
+                    border-radius: 8px;
+                    padding: 20px;
+                    margin: 20px 0;
+                    color: #842029;
+                    box-shadow: 0 4px 12px rgba(220, 53, 69, 0.2);
+                }
+                .footer {
+                    text-align: center;
+                    margin-top: 30px;
+                    color: #6c757d;
+                    font-size: 14px;
+                }
             </style>
         </head>
         <body>
-            <div class="header">
-                <h1>🔒 Password Reset Request</h1>
-            </div>
-            <div class="content">
-                <h2>Hello ${name}!</h2>
-                <p>We received a request to reset your password for your Car Rental Service account.</p>
-                
-                <div class="otp-box">
-                    <h3>Your One-Time Password (OTP):</h3>
-                    <div class="otp-code">${otp}</div>
-                    <p><small>Enter this code to verify your identity</small></p>
+            <div class="email-wrapper animate__animated animate__fadeInUp">
+                <div class="header animate__animated animate__bounceIn">
+                    <h1><i class="fas fa-lock"></i> Password Reset Request</h1>
                 </div>
-                
-                <div class="warning">
-                    <h3>⚠️ Important Security Information:</h3>
-                    <ul>
-                        <li>This OTP is valid for 10 minutes only</li>
-                        <li>Never share this code with anyone</li>
-                        <li>If you didn't request this reset, ignore this email</li>
-                        <li>Contact support if you're experiencing repeated unauthorized attempts</li>
-                    </ul>
+                <div class="content">
+                    <h2>Hello ${name}!</h2>
+                    <p>We received a request to reset your password for your Car Rental Service account.</p>
+                    <div class="otp-box animate__animated animate__pulse">
+                        <h3>Your One-Time Password (OTP):</h3>
+                        <div class="otp-code">${otp}</div>
+                        <p><small>Enter this code to verify your identity</small></p>
+                    </div>
+                    <div class="warning animate__animated animate__shakeX">
+                        <h3><i class="fas fa-exclamation-triangle"></i> Important Security Information:</h3>
+                        <ul>
+                            <li>This OTP is valid for 10 minutes only</li>
+                            <li>Never share this code with anyone</li>
+                            <li>If you didn't request this reset, ignore this email</li>
+                            <li>Contact support if you're experiencing repeated unauthorized attempts</li>
+                        </ul>
+                    </div>
+                    <p>After verification, you'll be able to set a new password for your account.</p>
                 </div>
-                
-                <p>After verification, you'll be able to set a new password for your account.</p>
-            </div>
-            <div class="footer">
-                <p>Best regards,<br>The Car Rental Service Security Team</p>
+                <div class="footer">
+                    <p>Best regards,<br>The Car Rental Service Security Team</p>
+                </div>
             </div>
         </body>
         </html>
