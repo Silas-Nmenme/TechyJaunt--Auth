@@ -347,67 +347,249 @@ const emailTemplates = {
   // Login Notification Template
   loginNotificationTemplate: (name, loginTime, ipAddress = 'Unknown', location = 'Unknown') => {
     return {
-      subject: 'Login Notification - Car Rental Service',
+      subject: 'Login Notification - Silas Car Rentals',
       html: `
         <!DOCTYPE html>
         <html lang="en">
         <head>
             <meta charset="UTF-8">
             <meta name="viewport" content="width=device-width, initial-scale=1.0">
-            <title>Login Notification</title>
+            <title>Login Notification - Silas Car Rentals</title>
+            <!-- Bootstrap CSS CDN -->
+            <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+            <!-- Animate.css CDN for animations -->
+            <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css">
+            <!-- AOS (Animate On Scroll) CDN for scroll animations -->
+            <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
+            <!-- Font Awesome for icons -->
+            <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
             <style>
-                body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px; }
-                .header { background: linear-gradient(135deg, #28a745 0%, #20c997 100%); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0; }
-                .content { background: #f8f9fa; padding: 30px; border-radius: 0 0 10px 10px; }
-                .info-box { background: #d1ecf1; padding: 15px; border-radius: 5px; margin: 20px 0; border-left: 4px solid #17a2b8; }
-                .security-notice { background: #fff3cd; padding: 15px; border-radius: 5px; margin: 20px 0; border-left: 4px solid #ffc107; }
-                .footer { text-align: center; margin-top: 30px; color: #6c757d; font-size: 14px; }
+                body {
+                    font-family: 'Segoe UI', 'Helvetica Neue', sans-serif;
+                    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                    margin: 0;
+                    padding: 40px 20px;
+                    color: #333;
+                    min-height: 100vh;
+                }
+                .email-wrapper {
+                    max-width: 680px;
+                    margin: auto;
+                    background: #ffffff;
+                    border-radius: 20px;
+                    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+                    padding: 40px;
+                    transform: scale(0.95);
+                    transition: transform 0.5s ease;
+                }
+                .email-wrapper:hover {
+                    transform: scale(1);
+                }
+                .header {
+                    text-align: center;
+                    border-bottom: 2px solid #eee;
+                    padding-bottom: 20px;
+                    margin-bottom: 30px;
+                }
+                .header h1 {
+                    color: #28a745;
+                    margin: 0;
+                    font-size: 32px;
+                    font-weight: bold;
+                    text-shadow: 0 2px 4px rgba(0,0,0,0.1);
+                }
+                .header p {
+                    color: #666;
+                    font-size: 18px;
+                    margin-top: 10px;
+                }
+                .section {
+                    margin-bottom: 30px;
+                }
+                .section h2 {
+                    color: #28a745;
+                    font-size: 24px;
+                    margin-bottom: 15px;
+                    border-bottom: 2px solid #ddd;
+                    padding-bottom: 5px;
+                    position: relative;
+                }
+                .section h2::after {
+                    content: '';
+                    position: absolute;
+                    bottom: -2px;
+                    left: 0;
+                    width: 50px;
+                    height: 2px;
+                    background: linear-gradient(90deg, #28a745, #20c997);
+                }
+                .info-box {
+                    background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+                    border-left: 6px solid #2196f3;
+                    padding: 20px;
+                    margin: 20px 0;
+                    border-radius: 12px;
+                    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+                }
+                .info-pair {
+                    margin: 12px 0;
+                    padding: 10px;
+                    background: #f8f9fa;
+                    border-radius: 8px;
+                    transition: background 0.3s ease;
+                }
+                .info-pair:hover {
+                    background: #e9ecef;
+                }
+                .label {
+                    font-weight: 600;
+                    display: inline-block;
+                    width: 120px;
+                    color: #555;
+                }
+                .value {
+                    color: #222;
+                    font-weight: 500;
+                }
+                .security-notice {
+                    background: linear-gradient(135deg, #fff3cd 0%, #ffeaa7 100%);
+                    border-left: 6px solid #ffc107;
+                    padding: 20px;
+                    margin: 20px 0;
+                    border-radius: 12px;
+                    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+                }
+                .security-notice h3 {
+                    color: #856404;
+                    margin-bottom: 10px;
+                }
+                .security-notice p {
+                    color: #6c5b2a;
+                }
+                .button {
+                    display: inline-block;
+                    background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+                    color: white;
+                    padding: 15px 35px;
+                    text-decoration: none;
+                    border-radius: 25px;
+                    margin: 20px 0;
+                    font-weight: bold;
+                    box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+                    transition: transform 0.3s ease;
+                }
+                .button:hover {
+                    transform: translateY(-2px);
+                    box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+                }
+                .footer {
+                    text-align: center;
+                    margin-top: 40px;
+                    font-size: 0.95em;
+                    color: #777;
+                    border-top: 2px solid #eee;
+                    padding-top: 20px;
+                }
+                .animate-fade-in {
+                    animation: fadeIn 1s ease-in;
+                }
+                .animate-slide-up {
+                    animation: slideInUp 0.8s ease-out;
+                }
+                .animate-bounce-in {
+                    animation: bounceIn 1s ease-out;
+                }
+                @keyframes fadeIn {
+                    from { opacity: 0; }
+                    to { opacity: 1; }
+                }
+                @keyframes slideInUp {
+                    from { transform: translateY(30px); opacity: 0; }
+                    to { transform: translateY(0); opacity: 1; }
+                }
+                @keyframes bounceIn {
+                    0% { transform: scale(0.3); opacity: 0; }
+                    50% { transform: scale(1.05); }
+                    70% { transform: scale(0.9); }
+                    100% { transform: scale(1); opacity: 1; }
+                }
             </style>
         </head>
         <body>
-            <div class="header">
-                <h1>🔐 Successful Login</h1>
-            </div>
-            <div class="content">
-                <h2>Hello ${name}!</h2>
-                <p>You have successfully logged into your Car Rental Service account.</p>
-                
-                <div class="info-box">
-                    <h3>Login Details:</h3>
-                    <p><strong>Time:</strong> ${loginTime}</p>
-                    <p><strong>IP Address:</strong> ${ipAddress}</p>
-                    <p><strong>Location:</strong> ${location}</p>
+            <div class="email-wrapper animate__animated animate__fadeInUp">
+                <div class="header animate__animated animate__bounceIn" data-aos="zoom-in">
+                    <h1><i class="fas fa-shield-alt"></i> Login Notification</h1>
+                    <p>Account Activity Alert</p>
                 </div>
-                
-                <div class="security-notice">
-                    <h3>⚠️ Security Notice</h3>
-                    <p>If this wasn't you, please change your password immediately and contact our support team.</p>
+
+                <div class="section animate__animated animate__fadeInLeft" data-aos="fade-up" data-aos-delay="200">
+                    <h2><i class="fas fa-user-check"></i> Hello ${name}!</h2>
+                    <p>We detected a successful login to your Silas Car Rentals account. If this was you, no action is needed.</p>
                 </div>
-                
-                <p>Ready to rent? Browse our latest vehicles and book your next adventure!</p>
+
+                <div class="section animate__animated animate__fadeInRight" data-aos="fade-up" data-aos-delay="400">
+                    <div class="info-box animate__animated animate__pulse" data-aos="flip-up" data-aos-delay="500">
+                        <h3><i class="fas fa-info-circle"></i> Login Details</h3>
+                        <div class="info-pair">
+                            <span class="label"><i class="fas fa-clock"></i> Time:</span>
+                            <span class="value">${loginTime}</span>
+                        </div>
+                        <div class="info-pair">
+                            <span class="label"><i class="fas fa-globe"></i> IP Address:</span>
+                            <span class="value">${ipAddress}</span>
+                        </div>
+                        <div class="info-pair">
+                            <span class="label"><i class="fas fa-map-marker-alt"></i> Location:</span>
+                            <span class="value">${location}</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="section animate__animated animate__fadeInLeft" data-aos="fade-up" data-aos-delay="700">
+                    <div class="security-notice animate__animated animate__shakeX" data-aos="fade-up" data-aos-delay="800">
+                        <h3><i class="fas fa-exclamation-triangle"></i> Security Notice</h3>
+                        <p>If this login wasn't you, please change your password immediately and contact our support team right away to secure your account.</p>
+                    </div>
+                    <p style="text-align: center;">Ready to explore our fleet? Continue your journey with Silas Car Rentals.</p>
+                    <div style="text-align: center;">
+                        <a href="https://silascarrentals.netlify.app" class="button animate__animated animate__bounceIn" data-aos="zoom-in" data-aos-delay="900">
+                            <i class="fas fa-car"></i> Browse Our Fleet
+                        </a>
+                    </div>
+                </div>
+
+                <div class="footer animate__animated animate__fadeIn" data-aos="fade-in" data-aos-delay="1000">
+                    <p>Best regards,<br>The Silas Car Rentals Security Team</p>
+                    <p><small>For your security, we monitor all account activity. This is an automated notification.</small></p>
+                </div>
             </div>
-            <div class="footer">
-                <p>Best regards,<br>The Car Rental Service Security Team</p>
-            </div>
+
+            <!-- AOS Script -->
+            <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
+            <script>
+                AOS.init();
+            </script>
         </body>
         </html>
       `,
       text: `
-        Successful Login - Car Rental Service
-        
+        Login Notification - Silas Car Rentals
+
         Hello ${name},
-        
-        You have successfully logged into your account.
-        
+
+        We detected a successful login to your account.
+
         Login Details:
         - Time: ${loginTime}
         - IP Address: ${ipAddress}
         - Location: ${location}
-        
-        If this wasn't you, please change your password immediately.
-        
+
+        If this wasn't you, please change your password immediately and contact support.
+
+        Ready to rent? Browse our fleet at https://silascarrentals.netlify.app
+
         Best regards,
-        The Car Rental Service Security Team
+        The Silas Car Rentals Security Team
       `
     };
   },
