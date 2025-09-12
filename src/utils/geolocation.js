@@ -1,18 +1,17 @@
 const axios = require('axios');
 
 /**
- * Get location information from IP address
+ * Get location information from IP address using ipapi.co
  * @param {string} ipAddress - The IP address to geolocate
- * @returns {Promise<string>} - Location string (City, Country)
+ * @returns {Promise<string|null>} - Location string (City, Country) or null if failed
  */
-const getLocationFromIP = async (ipAddress) => {
+const getLocationFromIPIpapi = async (ipAddress) => {
   try {
     // Skip geolocation for localhost/private IPs
     if (!ipAddress || ipAddress === '::1' || ipAddress === '127.0.0.1' || ipAddress.startsWith('192.168.') || ipAddress.startsWith('10.')) {
       return 'Local Network';
     }
 
-    // Use ipapi.co for geolocation (free tier allows 1000 requests/day)
     const response = await axios.get(`https://ipapi.co/${ipAddress}/json/`, {
       timeout: 5000 // 5 second timeout
     });
@@ -22,12 +21,59 @@ const getLocationFromIP = async (ipAddress) => {
     } else if (response.data && response.data.country_name) {
       return response.data.country_name;
     } else {
-      return 'Unknown Location';
+      return null;
     }
   } catch (error) {
-    console.error('Geolocation error:', error.message);
-    return 'Location Unavailable';
+    console.error('ipapi.co Geolocation error:', error.message);
+    return null;
   }
+};
+
+/**
+ * Get location information from IP address using ipinfo.io
+ * @param {string} ipAddress - The IP address to geolocate
+ * @returns {Promise<string|null>} - Location string (City, Country) or null if failed
+ */
+const getLocationFromIPIpinfo = async (ipAddress) => {
+  try {
+    if (!ipAddress || ipAddress === '::1' || ipAddress === '127.0.0.1' || ipAddress.startsWith('192.168.') || ipAddress.startsWith('10.')) {
+      return 'Local Network';
+    }
+
+    // ipinfo.io free tier allows 50k requests/month, no token needed for basic info
+    const response = await axios.get(`https://ipinfo.io/${ipAddress}/json`, {
+      timeout: 5000 // 5 second timeout
+    });
+
+    if (response.data && response.data.city && response.data.country) {
+      return `${response.data.city}, ${response.data.country}`;
+    } else if (response.data && response.data.country) {
+      return response.data.country;
+    } else {
+      return null;
+    }
+  } catch (error) {
+    console.error('ipinfo.io Geolocation error:', error.message);
+    return null;
+  }
+};
+
+/**
+ * Get location information from IP address with fallback to ipinfo.io
+ * @param {string} ipAddress - The IP address to geolocate
+ * @returns {Promise<string>} - Location string (City, Country) or fallback string
+ */
+const getLocationFromIP = async (ipAddress) => {
+  let location = await getLocationFromIPIpapi(ipAddress);
+  if (location) {
+    return location;
+  }
+  // Fallback to ipinfo.io
+  location = await getLocationFromIPIpinfo(ipAddress);
+  if (location) {
+    return location;
+  }
+  return 'Location Unavailable';
 };
 
 /**
