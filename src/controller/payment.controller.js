@@ -188,7 +188,7 @@ exports.handleFlutterwaveWebhook = async (req, res) => {
       return res.status(200).json({ message: 'Payment already processed' });
     }
 
-    if (event.data.status === 'successful' && event.data.amount >= payment.amount) {
+    if ((event.data.status === 'successful' || event.data.status === 'completed' || event.data.status === 'success') && event.data.amount >= payment.amount) {
       // Mark payment successful
       payment.status = 'successful';
       payment.flutterwaveTransactionId = flutterwaveId;
