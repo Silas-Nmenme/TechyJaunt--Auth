@@ -747,59 +747,212 @@ const emailTemplates = {
             <meta charset="UTF-8">
             <meta name="viewport" content="width=device-width, initial-scale=1.0">
             <title>Password Reset Confirmation</title>
+            <!-- Bootstrap CSS CDN -->
+            <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+            <!-- Animate.css CDN for animations -->
+            <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css">
+            <!-- Font Awesome for icons -->
+            <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
             <style>
-                body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px; }
-                .header { background: linear-gradient(135deg, #28a745 0%, #20c997 100%); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0; }
-                .content { background: #f8f9fa; padding: 30px; border-radius: 0 0 10px 10px; }
-                .success-box { background: #d4edda; padding: 15px; border-radius: 5px; margin: 20px 0; border-left: 4px solid #28a745; }
-                .tips-box { background: #e2e3e5; padding: 15px; border-radius: 5px; margin: 20px 0; }
-                .footer { text-align: center; margin-top: 30px; color: #6c757d; font-size: 14px; }
+                body {
+                    font-family: 'Segoe UI', 'Helvetica Neue', sans-serif;
+                    background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+                    margin: 0;
+                    padding: 40px 20px;
+                    color: #333;
+                    min-height: 100vh;
+                }
+                .email-wrapper {
+                    max-width: 600px;
+                    margin: auto;
+                    background: #ffffff;
+                    border-radius: 20px;
+                    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+                    padding: 40px;
+                    transform: scale(0.95);
+                    transition: transform 0.5s ease;
+                }
+                .email-wrapper:hover {
+                    transform: scale(1);
+                }
+                .header {
+                    text-align: center;
+                    border-bottom: 2px solid #eee;
+                    padding-bottom: 20px;
+                    margin-bottom: 30px;
+                }
+                .header h1 {
+                    color: #28a745;
+                    margin: 0;
+                    font-size: 32px;
+                    font-weight: bold;
+                    text-shadow: 0 2px 4px rgba(0,0,0,0.1);
+                }
+                .header p {
+                    color: #666;
+                    font-size: 18px;
+                    margin-top: 10px;
+                }
+                .section {
+                    margin-bottom: 30px;
+                }
+                .section h2 {
+                    color: #28a745;
+                    font-size: 24px;
+                    margin-bottom: 15px;
+                    border-bottom: 2px solid #ddd;
+                    padding-bottom: 5px;
+                    position: relative;
+                }
+                .section h2::after {
+                    content: '';
+                    position: absolute;
+                    bottom: -2px;
+                    left: 0;
+                    width: 50px;
+                    height: 2px;
+                    background: linear-gradient(90deg, #28a745, #20c997);
+                }
+                .success-box {
+                    background: linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%);
+                    border-left: 6px solid #28a745;
+                    padding: 25px;
+                    margin: 20px 0;
+                    border-radius: 12px;
+                    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+                    text-align: center;
+                }
+                .success-box h3 {
+                    color: #155724;
+                    margin-bottom: 10px;
+                }
+                .tips-box {
+                    background: linear-gradient(135deg, #e2e3e5 0%, #d1ecf1 100%);
+                    border-left: 6px solid #17a2b8;
+                    padding: 20px;
+                    margin: 20px 0;
+                    border-radius: 12px;
+                    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+                }
+                .tips-box h3 {
+                    color: #0c5460;
+                    margin-bottom: 10px;
+                }
+                .tips-box ul {
+                    margin: 0;
+                    padding-left: 20px;
+                }
+                .tips-box li {
+                    margin-bottom: 8px;
+                    color: #495057;
+                }
+                .button {
+                    display: inline-block;
+                    background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+                    color: white;
+                    padding: 15px 35px;
+                    text-decoration: none;
+                    border-radius: 25px;
+                    margin: 20px 0;
+                    font-weight: bold;
+                    box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+                    transition: transform 0.3s ease;
+                }
+                .button:hover {
+                    transform: translateY(-2px);
+                    box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+                }
+                .footer {
+                    text-align: center;
+                    margin-top: 40px;
+                    font-size: 0.95em;
+                    color: #777;
+                    border-top: 2px solid #eee;
+                    padding-top: 20px;
+                }
+                .animate-fade-in {
+                    animation: fadeIn 1s ease-in;
+                }
+                .animate-slide-up {
+                    animation: slideInUp 0.8s ease-out;
+                }
+                .animate-bounce-in {
+                    animation: bounceIn 1s ease-out;
+                }
+                @keyframes fadeIn {
+                    from { opacity: 0; }
+                    to { opacity: 1; }
+                }
+                @keyframes slideInUp {
+                    from { transform: translateY(30px); opacity: 0; }
+                    to { transform: translateY(0); opacity: 1; }
+                }
+                @keyframes bounceIn {
+                    0% { transform: scale(0.3); opacity: 0; }
+                    50% { transform: scale(1.05); }
+                    70% { transform: scale(0.9); }
+                    100% { transform: scale(1); opacity: 1; }
+                }
             </style>
         </head>
         <body>
-            <div class="header">
-                <h1>✅ Password Reset Successful</h1>
-            </div>
-            <div class="content">
-                <h2>Hello ${name}!</h2>
-                
-                <div class="success-box">
-                    <h3>🎉 Your password has been successfully reset!</h3>
-                    <p>You can now log in to your Car Rental Service account with your new password.</p>
+            <div class="email-wrapper animate__animated animate__fadeInUp">
+                <div class="header animate__animated animate__bounceIn">
+                    <h1><i class="fas fa-check-circle"></i> Password Reset Successful</h1>
+                    <p>Account Security Updated</p>
                 </div>
-                
-                <div class="tips-box">
-                    <h3>💡 Security Tips:</h3>
-                    <ul>
-                        <li>Use a strong, unique password</li>
-                        <li>Don't share your password with anyone</li>
-                        <li>Log out from public computers</li>
-                        <li>Contact us if you notice any suspicious activity</li>
-                    </ul>
+
+                <div class="section animate__animated animate__fadeInLeft">
+                    <h2><i class="fas fa-user-check"></i> Hello ${name}!</h2>
+                    <p>Great news! Your password has been successfully reset and your account is now secure.</p>
                 </div>
-                
-                <p>Ready to get back on the road? Log in and explore our latest vehicle collection!</p>
-            </div>
-            <div class="footer">
-                <p>Best regards,<br>The Car Rental Service Team</p>
+
+                <div class="section animate__animated animate__fadeInRight">
+                    <div class="success-box animate__animated animate__pulse">
+                        <h3><i class="fas fa-lock-open"></i> Password Reset Complete!</h3>
+                        <p>You can now log in to your Car Rental Service account with your new password.</p>
+                    </div>
+                </div>
+
+                <div class="section animate__animated animate__fadeInLeft">
+                    <div class="tips-box animate__animated animate__shakeX">
+                        <h3><i class="fas fa-shield-alt"></i> Security Tips:</h3>
+                        <ul>
+                            <li><i class="fas fa-key"></i> Use a strong, unique password</li>
+                            <li><i class="fas fa-user-secret"></i> Don't share your password with anyone</li>
+                            <li><i class="fas fa-sign-out-alt"></i> Log out from public computers</li>
+                            <li><i class="fas fa-eye"></i> Contact us if you notice any suspicious activity</li>
+                        </ul>
+                    </div>
+                    <p style="text-align: center;">Ready to get back on the road? Log in and explore our latest vehicle collection.</p>
+                    <div style="text-align: center;">
+                        <a href="https://silascarrentals.netlify.app" class="button animate__animated animate__bounceIn">
+                            <i class="fas fa-car"></i> Browse Our Fleet
+                        </a>
+                    </div>
+                </div>
+
+                <div class="footer animate__animated animate__fadeIn">
+                    <p>Best regards,<br>The Car Rental Service Team</p>
+                </div>
             </div>
         </body>
         </html>
       `,
       text: `
         Password Reset Successful - Car Rental Service
-        
+
         Hello ${name},
-        
+
         Your password has been successfully reset!
-        
+
         You can now log in with your new password.
-        
+
         Security Tips:
         - Use a strong, unique password
         - Don't share your password with anyone
         - Log out from public computers
-        
+
         Best regards,
         The Car Rental Service Team
       `
@@ -817,66 +970,228 @@ const emailTemplates = {
             <meta charset="UTF-8">
             <meta name="viewport" content="width=device-width, initial-scale=1.0">
             <title>Email Verified</title>
+            <!-- Bootstrap CSS CDN -->
+            <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+            <!-- Animate.css CDN for animations -->
+            <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css">
+            <!-- Font Awesome for icons -->
+            <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
             <style>
-                body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px; }
-                .header { background: linear-gradient(135deg, #28a745 0%, #20c997 100%); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0; }
-                .content { background: #f8f9fa; padding: 30px; border-radius: 0 0 10px 10px; }
-                .success-box { background: #d4edda; padding: 20px; border-radius: 5px; margin: 20px 0; text-align: center; }
-                .features-box { background: #fff; padding: 20px; border-radius: 5px; margin: 20px 0; }
-                .button { display: inline-block; background: #28a745; color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; margin: 10px 0; }
-                .footer { text-align: center; margin-top: 30px; color: #6c757d; font-size: 14px; }
+                body {
+                    font-family: 'Segoe UI', 'Helvetica Neue', sans-serif;
+                    background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+                    margin: 0;
+                    padding: 40px 20px;
+                    color: #333;
+                    min-height: 100vh;
+                }
+                .email-wrapper {
+                    max-width: 600px;
+                    margin: auto;
+                    background: #ffffff;
+                    border-radius: 20px;
+                    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+                    padding: 40px;
+                    transform: scale(0.95);
+                    transition: transform 0.5s ease;
+                }
+                .email-wrapper:hover {
+                    transform: scale(1);
+                }
+                .header {
+                    text-align: center;
+                    border-bottom: 2px solid #eee;
+                    padding-bottom: 20px;
+                    margin-bottom: 30px;
+                }
+                .header h1 {
+                    color: #28a745;
+                    margin: 0;
+                    font-size: 32px;
+                    font-weight: bold;
+                    text-shadow: 0 2px 4px rgba(0,0,0,0.1);
+                }
+                .header p {
+                    color: #666;
+                    font-size: 18px;
+                    margin-top: 10px;
+                }
+                .section {
+                    margin-bottom: 30px;
+                }
+                .section h2 {
+                    color: #28a745;
+                    font-size: 24px;
+                    margin-bottom: 15px;
+                    border-bottom: 2px solid #ddd;
+                    padding-bottom: 5px;
+                    position: relative;
+                }
+                .section h2::after {
+                    content: '';
+                    position: absolute;
+                    bottom: -2px;
+                    left: 0;
+                    width: 50px;
+                    height: 2px;
+                    background: linear-gradient(90deg, #28a745, #20c997);
+                }
+                .success-box {
+                    background: linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%);
+                    border-left: 6px solid #28a745;
+                    padding: 25px;
+                    margin: 20px 0;
+                    border-radius: 12px;
+                    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+                    text-align: center;
+                }
+                .success-box h3 {
+                    color: #155724;
+                    margin-bottom: 10px;
+                }
+                .features-box {
+                    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+                    border-left: 6px solid #17a2b8;
+                    padding: 20px;
+                    margin: 20px 0;
+                    border-radius: 12px;
+                    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+                }
+                .features-box h3 {
+                    color: #0c5460;
+                    margin-bottom: 15px;
+                }
+                .features-box ul {
+                    list-style: none;
+                    padding: 0;
+                    margin: 0;
+                }
+                .features-box li {
+                    padding: 8px 0;
+                    border-bottom: 1px solid #dee2e6;
+                    position: relative;
+                    padding-left: 25px;
+                }
+                .features-box li:last-child {
+                    border-bottom: none;
+                }
+                .features-box li::before {
+                    content: '✓';
+                    color: #28a745;
+                    font-weight: bold;
+                    position: absolute;
+                    left: 0;
+                }
+                .button {
+                    display: inline-block;
+                    background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+                    color: white;
+                    padding: 15px 35px;
+                    text-decoration: none;
+                    border-radius: 25px;
+                    margin: 20px 0;
+                    font-weight: bold;
+                    box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+                    transition: transform 0.3s ease;
+                }
+                .button:hover {
+                    transform: translateY(-2px);
+                    box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+                }
+                .footer {
+                    text-align: center;
+                    margin-top: 40px;
+                    font-size: 0.95em;
+                    color: #777;
+                    border-top: 2px solid #eee;
+                    padding-top: 20px;
+                }
+                .animate-fade-in {
+                    animation: fadeIn 1s ease-in;
+                }
+                .animate-slide-up {
+                    animation: slideInUp 0.8s ease-out;
+                }
+                .animate-bounce-in {
+                    animation: bounceIn 1s ease-out;
+                }
+                @keyframes fadeIn {
+                    from { opacity: 0; }
+                    to { opacity: 1; }
+                }
+                @keyframes slideInUp {
+                    from { transform: translateY(30px); opacity: 0; }
+                    to { transform: translateY(0); opacity: 1; }
+                }
+                @keyframes bounceIn {
+                    0% { transform: scale(0.3); opacity: 0; }
+                    50% { transform: scale(1.05); }
+                    70% { transform: scale(0.9); }
+                    100% { transform: scale(1); opacity: 1; }
+                }
             </style>
         </head>
         <body>
-            <div class="header">
-                <h1>🎉 Email Verified Successfully!</h1>
-            </div>
-            <div class="content">
-                <h2>Congratulations ${name}!</h2>
-                
-                <div class="success-box">
-                    <h3>✅ Your email has been verified!</h3>
-                    <p>Your Car Rental Service account is now fully activated and ready to use.</p>
+            <div class="email-wrapper animate__animated animate__fadeInUp">
+                <div class="header animate__animated animate__bounceIn">
+                    <h1><i class="fas fa-check-circle"></i> Email Verified Successfully!</h1>
+                    <p>Welcome Aboard</p>
                 </div>
-                
-                <div class="features-box">
-                    <h3>🚗 What you can do now:</h3>
-                    <ul>
-                        <li>Browse our premium vehicle collection</li>
-                        <li>Book rentals instantly</li>
-                        <li>Manage your bookings online</li>
-                        <li>Access exclusive member discounts</li>
-                        <li>Enjoy 24/7 customer support</li>
-                    </ul>
+
+                <div class="section animate__animated animate__fadeInLeft">
+                    <h2><i class="fas fa-user-check"></i> Congratulations ${name}!</h2>
+                    <p>Your email verification is complete and your account is now fully activated.</p>
                 </div>
-                
-                <p style="text-align: center;">
-                    <a href="https://silascarrentals.netlify.app" class="button">Start Browsing Vehicles</a>
-                </p>
-                
-                <p>Thank you for choosing Car Rental Service. We look forward to serving you!</p>
-            </div>
-            <div class="footer">
-                <p>Best regards,<br>The Car Rental Service Team</p>
+
+                <div class="section animate__animated animate__fadeInRight">
+                    <div class="success-box animate__animated animate__pulse">
+                        <h3><i class="fas fa-envelope-open"></i> Your email has been verified!</h3>
+                        <p>Your Car Rental Service account is now fully activated and ready to use.</p>
+                    </div>
+                </div>
+
+                <div class="section animate__animated animate__fadeInLeft">
+                    <div class="features-box animate__animated animate__shakeX">
+                        <h3><i class="fas fa-car"></i> What you can do now:</h3>
+                        <ul>
+                            <li>Browse our premium vehicle collection</li>
+                            <li>Book rentals instantly</li>
+                            <li>Manage your bookings online</li>
+                            <li>Access exclusive member discounts</li>
+                            <li>Enjoy 24/7 customer support</li>
+                        </ul>
+                    </div>
+                    <p style="text-align: center;">Ready to start your journey? Explore our fleet and find your perfect rental.</p>
+                    <div style="text-align: center;">
+                        <a href="https://silascarrentals.netlify.app" class="button animate__animated animate__bounceIn">
+                            <i class="fas fa-search"></i> Start Browsing Vehicles
+                        </a>
+                    </div>
+                    <p>Thank you for choosing Car Rental Service. We look forward to serving you!</p>
+                </div>
+
+                <div class="footer animate__animated animate__fadeIn">
+                    <p>Best regards,<br>The Car Rental Service Team</p>
+                </div>
             </div>
         </body>
         </html>
       `,
       text: `
         Email Verified Successfully!
-        
+
         Congratulations ${name}!
-        
+
         Your email has been verified and your account is now fully activated.
-        
+
         What you can do now:
         - Browse our premium vehicle collection
         - Book rentals instantly
         - Manage your bookings online
         - Access exclusive member discounts
-        
+
         Thank you for choosing Car Rental Service!
-        
+
         Best regards,
         The Car Rental Service Team
       `
