@@ -1,3 +1,4 @@
+// @ts-nocheck
 const emailTemplates = {
   // Welcome & Email Verification Template
   welcomeTemplate: (name, emailToken, baseUrl = 'https://silascarrentals.netlify.app') => {
@@ -1209,68 +1210,234 @@ const emailTemplates = {
             <meta charset="UTF-8">
             <meta name="viewport" content="width=device-width, initial-scale=1.0">
             <title>Welcome via Google</title>
+            <!-- Bootstrap CSS CDN -->
+            <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+            <!-- Animate.css CDN for animations -->
+            <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css">
+            <!-- AOS (Animate On Scroll) CDN for scroll animations -->
+            <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
+            <!-- Font Awesome for icons -->
+            <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
             <style>
-                body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px; }
-                .header { background: linear-gradient(135deg, #4285f4 0%, #db4437 50%, #f4b400 100%); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0; }
-                .content { background: #f8f9fa; padding: 30px; border-radius: 0 0 10px 10px; }
-                .google-badge { background: #4285f4; color: white; padding: 10px 20px; border-radius: 25px; display: inline-block; margin: 20px 0; }
-                .features-box { background: #fff; padding: 20px; border-radius: 5px; margin: 20px 0; }
-                .button { display: inline-block; background: #4285f4; color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; margin: 10px 0; }
-                .footer { text-align: center; margin-top: 30px; color: #6c757d; font-size: 14px; }
+                body {
+                    font-family: 'Segoe UI', 'Helvetica Neue', sans-serif;
+                    background: linear-gradient(135deg, #4285f4 0%, #34a853 100%);
+                    margin: 0;
+                    padding: 40px 20px;
+                    color: #333;
+                    min-height: 100vh;
+                }
+                .email-wrapper {
+                    max-width: 680px;
+                    margin: auto;
+                    background: #ffffff;
+                    border-radius: 20px;
+                    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+                    padding: 40px;
+                    transform: scale(0.95);
+                    transition: transform 0.5s ease;
+                }
+                .email-wrapper:hover {
+                    transform: scale(1);
+                }
+                .header {
+                    text-align: center;
+                    border-bottom: 2px solid #eee;
+                    padding-bottom: 20px;
+                    margin-bottom: 30px;
+                }
+                .header h1 {
+                    color: #4285f4;
+                    margin: 0;
+                    font-size: 32px;
+                    font-weight: bold;
+                    text-shadow: 0 2px 4px rgba(0,0,0,0.1);
+                }
+                .header p {
+                    color: #666;
+                    font-size: 18px;
+                    margin-top: 10px;
+                }
+                .section {
+                    margin-bottom: 30px;
+                }
+                .section h2 {
+                    color: #4285f4;
+                    font-size: 24px;
+                    margin-bottom: 15px;
+                    border-bottom: 2px solid #ddd;
+                    padding-bottom: 5px;
+                    position: relative;
+                }
+                .section h2::after {
+                    content: '';
+                    position: absolute;
+                    bottom: -2px;
+                    left: 0;
+                    width: 50px;
+                    height: 2px;
+                    background: linear-gradient(90deg, #4285f4, #34a853);
+                }
+                .google-box {
+                    background: linear-gradient(135deg, #f1f6ff 0%, #e0f2fe 100%);
+                    border-left: 6px solid #4285f4;
+                    padding: 20px;
+                    margin: 20px 0;
+                    border-radius: 12px;
+                    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+                    text-align: center;
+                    font-family: 'Segoe UI', sans-serif;
+                }
+                .google-icon {
+                    font-size: 48px;
+                    color: #4285f4;
+                    margin-bottom: 10px;
+                }
+                .button {
+                    display: inline-block;
+                    background: linear-gradient(135deg, #4285f4 0%, #34a853 100%);
+                    color: white;
+                    padding: 15px 35px;
+                    text-decoration: none;
+                    border-radius: 25px;
+                    margin: 20px 0;
+                    font-weight: bold;
+                    box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+                    transition: transform 0.3s ease;
+                }
+                .button:hover {
+                    transform: translateY(-2px);
+                    box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+                }
+                .features-list {
+                    background: #f8f9fa;
+                    padding: 20px;
+                    border-radius: 10px;
+                    margin: 20px 0;
+                }
+                .features-list ul {
+                    list-style: none;
+                    padding: 0;
+                }
+                .features-list li {
+                    padding: 8px 0;
+                    border-bottom: 1px solid #eee;
+                }
+                .features-list li:last-child {
+                    border-bottom: none;
+                }
+                .features-list li i {
+                    color: #34a853;
+                    margin-right: 10px;
+                }
+                .footer {
+                    text-align: center;
+                    margin-top: 40px;
+                    font-size: 0.95em;
+                    color: #777;
+                    border-top: 2px solid #eee;
+                    padding-top: 20px;
+                }
+                .animate-fade-in {
+                    animation: fadeIn 1s ease-in;
+                }
+                .animate-slide-up {
+                    animation: slideInUp 0.8s ease-out;
+                }
+                .animate-bounce-in {
+                    animation: bounceIn 1s ease-out;
+                }
+                @keyframes fadeIn {
+                    from { opacity: 0; }
+                    to { opacity: 1; }
+                }
+                @keyframes slideInUp {
+                    from { transform: translateY(30px); opacity: 0; }
+                    to { transform: translateY(0); opacity: 1; }
+                }
+                @keyframes bounceIn {
+                    0% { transform: scale(0.3); opacity: 0; }
+                    50% { transform: scale(1.05); }
+                    70% { transform: scale(0.9); }
+                    100% { transform: scale(1); opacity: 1; }
+                }
             </style>
         </head>
         <body>
-            <div class="header">
-                <h1>🚗 Welcome to Car Rental Service!</h1>
-                <div class="google-badge">
-                    <strong>✓ Connected with Google</strong>
+            <div class="email-wrapper animate__animated animate__fadeInUp">
+                <div class="header animate__animated animate__bounceIn" data-aos="zoom-in">
+                    <h1><i class="fab fa-google"></i> Welcome to Car Rental Service!</h1>
+                    <p>Google Account Connected Successfully</p>
+                </div>
+
+                <div class="section animate__animated animate__fadeInLeft" data-aos="fade-up" data-aos-delay="200">
+                    <h2><i class="fas fa-user-check"></i> Hello ${name}!</h2>
+                    <p>Thank you for signing up with Car Rental Service using your Google account. Your account has been successfully created and linked!</p>
+                    <p><strong>You can now enjoy seamless access to our premium car rental services.</strong></p>
+                </div>
+
+                <div class="section animate__animated animate__fadeInRight" data-aos="fade-up" data-aos-delay="400">
+                    <div class="google-box animate__animated animate__pulse" data-aos="flip-up" data-aos-delay="500">
+                        <div class="google-icon"><i class="fab fa-google"></i></div>
+                        <strong>Google Account Linked</strong><br>
+                        <small>You can sign in with Google anytime</small>
+                    </div>
+                    <p style="text-align: center;">Ready to explore our fleet? Start browsing our vehicles now.</p>
+                    <div style="text-align: center;">
+                        <a href="https://silascarrentals.netlify.app" class="button animate__animated animate__bounceIn" data-aos="zoom-in" data-aos-delay="600">
+                            <i class="fas fa-car"></i> Browse Our Fleet
+                        </a>
+                    </div>
+                </div>
+
+                <div class="section animate__animated animate__fadeInLeft" data-aos="fade-up" data-aos-delay="700">
+                    <h2><i class="fas fa-road"></i> What's Next?</h2>
+                    <div class="features-list">
+                        <ul>
+                            <li><i class="fas fa-search"></i> Browse our extensive fleet of premium vehicles</li>
+                            <li><i class="fas fa-calendar-check"></i> Book your perfect rental car with ease</li>
+                            <li><i class="fas fa-handshake"></i> Enjoy seamless pickup and drop-off services</li>
+                            <li><i class="fas fa-star"></i> Access exclusive member benefits and discounts</li>
+                        </ul>
+                    </div>
+                    <p>If you didn't create this account, please contact our support team immediately.</p>
+                </div>
+
+                <div class="footer animate__animated animate__fadeIn" data-aos="fade-in" data-aos-delay="800">
+                    <p>Best regards,<br>The Car Rental Service Team</p>
+                    <p><small>Powered by Google Sign-In for secure and easy access</small></p>
                 </div>
             </div>
-            <div class="content">
-                <h2>Hello ${name}!</h2>
-                <p>Welcome! You've successfully signed up using your Google account. Your account is ready to use immediately!</p>
-                
-                <div class="features-box">
-                    <h3>🎉 Your Account Benefits:</h3>
-                    <ul>
-                        <li>✅ <strong>Instant Access</strong> - No email verification needed</li>
-                        <li>✅ <strong>Secure Login</strong> - Protected by Google's security</li>
-                        <li>✅ <strong>Quick Booking</strong> - Start renting immediately</li>
-                        <li>✅ <strong>Profile Sync</strong> - Your Google profile is automatically linked</li>
-                    </ul>
-                </div>
-                
-                <h3>🚀 Ready to Get Started?</h3>
-                <p>Browse our extensive fleet and book your perfect rental car today!</p>
-                
-                <p style="text-align: center;">
-                    <a href="https://silascarrentals.netlify.app" class="button">Browse Our Fleet</a>
-                </p>
-            </div>
-            <div class="footer">
-                <p>Best regards,<br>The Car Rental Service Team</p>
-                <p><small>You signed up using Google. You can add a password later if you want additional login options.</small></p>
-            </div>
+
+            <!-- AOS Script -->
+            <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
+            <script>
+                AOS.init();
+            </script>
         </body>
         </html>
       `,
       text: `
-        Welcome to Car Rental Service!
-        
+        Welcome to Car Rental Service - Google Account Connected!
+
         Hello ${name},
-        
-        Welcome! You've successfully signed up using your Google account.
-        
-        Your account benefits:
-        - Instant access - no email verification needed
-        - Secure login protected by Google
-        - Quick booking - start renting immediately
-        - Profile sync with your Google account
-        
-        Ready to get started? Browse our fleet and book your perfect rental car!
-        
+
+        Thank you for signing up with Car Rental Service using your Google account. Your account has been successfully created and linked!
+
+        You can now enjoy seamless access to our premium car rental services.
+
+        What's next?
+        - Browse our extensive fleet of premium vehicles
+        - Book your perfect rental car with ease
+        - Enjoy seamless pickup and drop-off services
+        - Access exclusive member benefits and discounts
+
+        If you didn't create this account, please contact our support team immediately.
+
         Best regards,
         The Car Rental Service Team
+
+        Powered by Google Sign-In for secure and easy access.
       `
     };
   },
@@ -1286,58 +1453,234 @@ const emailTemplates = {
             <meta charset="UTF-8">
             <meta name="viewport" content="width=device-width, initial-scale=1.0">
             <title>Password Set Confirmation</title>
+            <!-- Bootstrap CSS CDN -->
+            <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+            <!-- Animate.css CDN for animations -->
+            <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css">
+            <!-- AOS (Animate On Scroll) CDN for scroll animations -->
+            <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
+            <!-- Font Awesome for icons -->
+            <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
             <style>
-                body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px; }
-                .header { background: linear-gradient(135deg, #28a745 0%, #4285f4 100%); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0; }
-                .content { background: #f8f9fa; padding: 30px; border-radius: 0 0 10px 10px; }
-                .success-box { background: #d4edda; padding: 15px; border-radius: 5px; margin: 20px 0; border-left: 4px solid #28a745; }
-                .info-box { background: #e2e3e5; padding: 15px; border-radius: 5px; margin: 20px 0; }
-                .footer { text-align: center; margin-top: 30px; color: #6c757d; font-size: 14px; }
+                body {
+                    font-family: 'Segoe UI', 'Helvetica Neue', sans-serif;
+                    background: linear-gradient(135deg, #28a745 0%, #4285f4 100%);
+                    margin: 0;
+                    padding: 40px 20px;
+                    color: #333;
+                    min-height: 100vh;
+                }
+                .email-wrapper {
+                    max-width: 600px;
+                    margin: auto;
+                    background: #ffffff;
+                    border-radius: 20px;
+                    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+                    padding: 40px;
+                    transform: scale(0.95);
+                    transition: transform 0.5s ease;
+                }
+                .email-wrapper:hover {
+                    transform: scale(1);
+                }
+                .header {
+                    text-align: center;
+                    border-bottom: 2px solid #eee;
+                    padding-bottom: 20px;
+                    margin-bottom: 30px;
+                }
+                .header h1 {
+                    color: #28a745;
+                    margin: 0;
+                    font-size: 32px;
+                    font-weight: bold;
+                    text-shadow: 0 2px 4px rgba(0,0,0,0.1);
+                }
+                .header p {
+                    color: #666;
+                    font-size: 18px;
+                    margin-top: 10px;
+                }
+                .section {
+                    margin-bottom: 30px;
+                }
+                .section h2 {
+                    color: #28a745;
+                    font-size: 24px;
+                    margin-bottom: 15px;
+                    border-bottom: 2px solid #ddd;
+                    padding-bottom: 5px;
+                    position: relative;
+                }
+                .section h2::after {
+                    content: '';
+                    position: absolute;
+                    bottom: -2px;
+                    left: 0;
+                    width: 50px;
+                    height: 2px;
+                    background: linear-gradient(90deg, #28a745, #4285f4);
+                }
+                .success-box {
+                    background: linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%);
+                    border-left: 6px solid #28a745;
+                    padding: 25px;
+                    margin: 20px 0;
+                    border-radius: 12px;
+                    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+                    text-align: center;
+                }
+                .success-box h3 {
+                    color: #155724;
+                    margin-bottom: 10px;
+                }
+                .login-options {
+                    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+                    border-left: 6px solid #17a2b8;
+                    padding: 20px;
+                    margin: 20px 0;
+                    border-radius: 12px;
+                    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+                }
+                .login-options h3 {
+                    color: #0c5460;
+                    margin-bottom: 15px;
+                }
+                .login-options ul {
+                    list-style: none;
+                    padding: 0;
+                    margin: 0;
+                }
+                .login-options li {
+                    padding: 8px 0;
+                    border-bottom: 1px solid #dee2e6;
+                    position: relative;
+                    padding-left: 25px;
+                }
+                .login-options li:last-child {
+                    border-bottom: none;
+                }
+                .login-options li::before {
+                    content: '✓';
+                    color: #28a745;
+                    font-weight: bold;
+                    position: absolute;
+                    left: 0;
+                }
+                .button {
+                    display: inline-block;
+                    background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+                    color: white;
+                    padding: 15px 35px;
+                    text-decoration: none;
+                    border-radius: 25px;
+                    margin: 20px 0;
+                    font-weight: bold;
+                    box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+                    transition: transform 0.3s ease;
+                }
+                .button:hover {
+                    transform: translateY(-2px);
+                    box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+                }
+                .footer {
+                    text-align: center;
+                    margin-top: 40px;
+                    font-size: 0.95em;
+                    color: #777;
+                    border-top: 2px solid #eee;
+                    padding-top: 20px;
+                }
+                .animate-fade-in {
+                    animation: fadeIn 1s ease-in;
+                }
+                .animate-slide-up {
+                    animation: slideInUp 0.8s ease-out;
+                }
+                .animate-bounce-in {
+                    animation: bounceIn 1s ease-out;
+                }
+                @keyframes fadeIn {
+                    from { opacity: 0; }
+                    to { opacity: 1; }
+                }
+                @keyframes slideInUp {
+                    from { transform: translateY(30px); opacity: 0; }
+                    to { transform: translateY(0); opacity: 1; }
+                }
+                @keyframes bounceIn {
+                    0% { transform: scale(0.3); opacity: 0; }
+                    50% { transform: scale(1.05); }
+                    70% { transform: scale(0.9); }
+                    100% { transform: scale(1); opacity: 1; }
+                }
             </style>
         </head>
         <body>
-            <div class="header">
-                <h1>🔐 Password Added Successfully!</h1>
-            </div>
-            <div class="content">
-                <h2>Hello ${name}!</h2>
-                
-                <div class="success-box">
-                    <h3>✅ Password Set Successfully!</h3>
-                    <p>You can now log in using both Google and your email/password combination.</p>
+            <div class="email-wrapper animate__animated animate__fadeInUp">
+                <div class="header animate__animated animate__bounceIn" data-aos="zoom-in">
+                    <h1><i class="fas fa-lock"></i> Password Added Successfully!</h1>
+                    <p>Account Security Enhanced</p>
                 </div>
-                
-                <div class="info-box">
-                    <h3>🔑 Your Login Options:</h3>
-                    <ul>
-                        <li><strong>Google Sign-In:</strong> Continue using your Google account</li>
-                        <li><strong>Email & Password:</strong> Use your email and the password you just set</li>
-                    </ul>
+
+                <div class="section animate__animated animate__fadeInLeft" data-aos="fade-up" data-aos-delay="200">
+                    <h2><i class="fas fa-user-check"></i> Hello ${name}!</h2>
+                    <p>Great news! Your password has been successfully added to your Silas Car Rental Service account.</p>
                 </div>
-                
-                <p>Having multiple login options gives you more flexibility and ensures you can always access your account.</p>
+
+                <div class="section animate__animated animate__fadeInRight" data-aos="fade-up" data-aos-delay="400">
+                    <div class="success-box animate__animated animate__pulse" data-aos="flip-up" data-aos-delay="500">
+                        <h3><i class="fas fa-check-circle"></i> Password Set Successfully!</h3>
+                        <p>You can now log in using both Google and your email/password combination.</p>
+                    </div>
+                </div>
+
+                <div class="section animate__animated animate__fadeInLeft" data-aos="fade-up" data-aos-delay="700">
+                    <div class="login-options animate__animated animate__shakeX" data-aos="fade-up" data-aos-delay="800">
+                        <h3><i class="fas fa-key"></i> Your Login Options:</h3>
+                        <ul>
+                            <li><i class="fab fa-google"></i> Google Sign-In: Continue using your Google account</li>
+                            <li><i class="fas fa-envelope"></i> Email & Password: Use your email and the password you just set</li>
+                        </ul>
+                    </div>
+                    <p>Having multiple login options gives you more flexibility and ensures you can always access your account.</p>
+                    <p style="text-align: center;">Ready to explore our fleet? Start browsing our vehicles now.</p>
+                    <div style="text-align: center;">
+                        <a href="https://silascarrentals.netlify.app" class="button animate__animated animate__bounceIn" data-aos="zoom-in" data-aos-delay="900">
+                            <i class="fas fa-car"></i> Browse Our Fleet
+                        </a>
+                    </div>
+                </div>
+
+                <div class="footer animate__animated animate__fadeIn" data-aos="fade-in" data-aos-delay="1000">
+                    <p>Best regards,<br>The Silas Car Rental Service Team</p>
+                    <p><small>Your account security is our top priority</small></p>
+                </div>
             </div>
-            <div class="footer">
-                <p>Best regards,<br>The Car Rental Service Team</p>
-            </div>
+
+            <!-- AOS Script -->
+            <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
+            <script>
+                AOS.init();
+            </script>
         </body>
         </html>
       `,
       text: `
-        Password Added Successfully!
-        
+        Password Added Successfully - Silas Car Rental Service
+
         Hello ${name},
-        
+
         Your password has been set successfully!
-        
+
         You can now log in using both:
         - Google Sign-In (continue using your Google account)
         - Email & Password (use your email and new password)
-        
+
         Having multiple login options gives you more flexibility.
-        
+
         Best regards,
-        The Car Rental Service Team
+        The Silas Car Rental Service Team
       `
     };
   },
