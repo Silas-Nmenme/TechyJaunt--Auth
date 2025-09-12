@@ -8,6 +8,7 @@ const emailTemplates = require("../../templates/emailTemplates");
 const { OAuth2Client } = require('google-auth-library');
 const { google } = require('googleapis');
 const { upload, deleteImage, extractPublicId } = require('../config/cloudinary');
+const { getLocationFromIP, getClientIP } = require('../utils/geolocation');
 // Initialize Google OAuth client
 const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
@@ -137,9 +138,13 @@ const login = async (req, res) => {
       expiresIn: process.env.JWT_EXPIRATION,
     });
 
+    // Get client IP and location for login notification
+    const clientIP = getClientIP(req);
+    const location = await getLocationFromIP(clientIP);
+
     // Send login notification with template
     const loginTime = new Date().toLocaleString();
-    const loginTemplate = emailTemplates.loginNotificationTemplate(user.name, loginTime);
+    const loginTemplate = emailTemplates.loginNotificationTemplate(user.name, loginTime, clientIP, location);
     await sendTemplateEmail(
       email,
       loginTemplate.subject,
@@ -465,8 +470,12 @@ const handleGoogleCallback = async (req, res) => {
 
     // Send login notification (only for existing users)
     if (!isNewUser) {
+      // Get client IP and location for login notification
+      const clientIP = getClientIP(req);
+      const location = await getLocationFromIP(clientIP);
+
       const loginTime = new Date().toLocaleString();
-      const loginTemplate = emailTemplates.loginNotificationTemplate(user.name, loginTime);
+      const loginTemplate = emailTemplates.loginNotificationTemplate(user.name, loginTime, clientIP, location);
       await sendTemplateEmail(
         email,
         loginTemplate.subject,
