@@ -17,6 +17,15 @@ const formatDate = (date) => new Date(date).toLocaleDateString('en-NG', {
   day: 'numeric',
 });
 
+// Calculate number of days between start and end date
+const calculateDays = (startDate, endDate) => {
+  const start = new Date(startDate);
+  const end = new Date(endDate);
+  const diffTime = Math.abs(end - start);
+  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+  return diffDays;
+};
+
 // Initiate Flutterwave Payment
 exports.makePayment = async (req, res) => {
   try {
@@ -34,13 +43,16 @@ exports.makePayment = async (req, res) => {
     const car = await Car.findById(carId);
     if (!car) return res.status(404).json({ message: 'Car not found.' });
 
+    const days = calculateDays(startDate, endDate);
+    const totalAmount = car.price * days;
+
     const tx_ref = `tx-${Date.now()}-${req.user._id}`;
 
     // Create pending payment record (without flutterwaveTransactionId)
     const paymentData = {
       user: req.user._id,
       car: carId,
-      amount: car.price,
+      amount: totalAmount,
       currency: 'NGN',
       tx_ref,
       status: 'pending',
@@ -54,7 +66,7 @@ exports.makePayment = async (req, res) => {
 
     const payload = {
       tx_ref,
-      amount: car.price,
+      amount: totalAmount,
       currency: 'NGN',
       redirect_url: process.env.FLW_REDIRECT_URL || "http://localhost:4500/api/payment/flutterwave/callback",
       customer: {
@@ -64,7 +76,7 @@ exports.makePayment = async (req, res) => {
       },
       customizations: {
         title: 'Car Rental Payment',
-        description: `Payment for ${car.make} ${car.model}`,
+        description: `Payment for ${car.make} ${car.model} for ${days} days`,
         logo: '../logo/car-logo.webp'
       }
     };
@@ -152,10 +164,10 @@ exports.handleFlutterwaveWebhook = async (req, res) => {
                              .replace('{{tx_ref}}', txRef)
                              .replace('{{transaction_id}}', flutterwaveId)
                              .replace('{{total_amount}}', payment.amount)
-                             .replace('&copy; 2025 Silas Car Rentals', `&copy; ${new Date().getFullYear()} TechyJaunt Car Rentals`);
+                             .replace('&copy; 2025 Silas Car Rentals', `&copy; ${new Date().getFullYear()} Silas Car Rentals`);
 
         if (user.email) {
-          await sendEmail(user.email, 'Rental Payment Confirmation - TechyJaunt', emailHtml);
+          await sendEmail(user.email, 'Rental Payment Confirmation - Silas Car Rentals', emailHtml);
         }
       }
 
