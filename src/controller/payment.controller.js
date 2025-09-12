@@ -260,17 +260,25 @@ exports.handleCallback = async (req, res) => {
     const transactions = response.data.data;
     console.log('Callback: Transactions array:', transactions);
 
-    if (!transactions || transactions.length === 0) {
-      console.log('Callback: No transaction found for tx_ref:', tx_ref);
-      if (payment.status !== 'failed') {
-        payment.status = 'failed';
-        await payment.save();
+    let transaction = null;
+    if (transactions && transactions.length > 0) {
+      transaction = transactions[0]; // Assuming the first one is the relevant transaction
+      console.log('Callback: Transaction details:', transaction);
+    } else if (payment.flutterwaveTransactionId) {
+      // If no transactions found by tx_ref, try verifying using stored transaction ID
+      console.log('Callback: No transactions found by tx_ref, verifying using stored ID:', payment.flutterwaveTransactionId);
+      try {
+        const verifyResponse = await axios.get(`https://api.flutterwave.com/v3/transactions/${payment.flutterwaveTransactionId}/verify`, {
+          headers: {
+            Authorization: `Bearer ${process.env.FLW_SECRET_KEY}`,
+          },
+        });
+        transaction = verifyResponse.data.data;
+        console.log('Callback: Verified transaction details:', transaction);
+      } catch (verifyError) {
+        console.error('Callback: Error verifying transaction by ID:', verifyError.message);
       }
-      return res.redirect('https://silascarrentals.netlify.app/payment-success.htm');
     }
-
-    const transaction = transactions[0]; // Assuming the first one is the relevant transaction
-    console.log('Callback: Transaction details:', transaction);
 
     if (transaction && (transaction.status === 'successful' || transaction.status === 'completed' || transaction.status === 'success') && transaction.amount >= payment.amount) {
       console.log('Callback: Payment successful for tx_ref:', tx_ref);
@@ -311,8 +319,9 @@ exports.handleCallback = async (req, res) => {
       return res.redirect('https://silascarrentals.netlify.app/payment-success.htm');
     } else {
       // Update payment to failed if not already
+      console.log('Callback: Payment failed or not found for tx_ref:', tx_ref);
       if (payment.status !== 'failed') {
-        // payment.status = 'failed';
+        payment.status = 'failed';
         await payment.save();
       }
 
