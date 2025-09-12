@@ -5,6 +5,8 @@ const Car = require('../models/car.schema.js');
 const User = require('../models/user.schema.js');
 const sendSms = require('../utils/sendSms.js');
 const sendEmail = require('../utils/sendEmail.js');
+const fs = require('fs');
+const path = require('path');
 
 const flw = new Flutterwave(process.env.FLW_PUBLIC_KEY, process.env.FLW_SECRET_KEY);
 
@@ -48,7 +50,7 @@ exports.makePayment = async (req, res) => {
       endDate: new Date(endDate)
     };
 
-    await Payment.create(paymentData); t
+    await Payment.create(paymentData);
 
     const payload = {
       tx_ref,
@@ -130,33 +132,27 @@ exports.handleFlutterwaveWebhook = async (req, res) => {
           await sendSms(user.phoneNumber, sms, user._id);
         }
 
-        const emailHtml = `
-          <div style="font-family: Arial, sans-serif; color: #333; padding: 20px; background-color: #f9f9f9;">
-            <div style="max-width: 600px; margin: auto; background: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 10px rgba(0,0,0,0.05);">
-              <div style="background-color: #10182F; padding: 20px; text-align: center;">
-                <h1 style="color: #ffffff; margin: 0;">TechyJaunt Car Rentals</h1>
-              </div>
-              <div style="padding: 30px;">
-                <h2 style="color: #10182F;">Hi ${user.name},</h2>
-                <p style="font-size: 16px;">Your payment has been successfully processed. Below are your rental details:</p>
-                <table style="width: 100%; margin-top: 20px; border-collapse: collapse;">
-                  <tr><td style="padding: 10px;"><strong>Car:</strong></td><td style="padding: 10px;">${car.make} ${car.model}</td></tr>
-                  <tr><td style="padding: 10px;"><strong>Start Date:</strong></td><td style="padding: 10px;">${formatDate(car.startDate)}</td></tr>
-                  <tr><td style="padding: 10px;"><strong>End Date:</strong></td><td style="padding: 10px;">${formatDate(car.endDate)}</td></tr>
-                  <tr><td style="padding: 10px;"><strong>Amount:</strong></td><td style="padding: 10px;">₦${payment.amount}</td></tr>
-                  <tr><td style="padding: 10px;"><strong>Transaction ID:</strong></td><td style="padding: 10px;">${flutterwaveId}</td></tr>
-                </table>
-                <p style="margin-top: 30px;">We appreciate your business!</p>
-                <div style="margin-top: 30px; text-align: center;">
-                  <a href="https://techyjaunt.com" style="background-color: #10182F; color: #ffffff; padding: 12px 24px; text-decoration: none; border-radius: 5px;">Visit Our Website</a>
-                </div>
-              </div>
-              <div style="background-color: #f1f1f1; text-align: center; padding: 15px; font-size: 12px; color: #777;">
-                &copy; ${new Date().getFullYear()} TechyJaunt. All rights reserved.
-              </div>
-            </div>
-          </div>
+        // Read receipt template
+        const templatePath = path.join(__dirname, '../../templates/receipt.html');
+        let emailHtml = fs.readFileSync(templatePath, 'utf-8');
+
+        // Prepare car details HTML
+        const carDetailsHtml = `
+          <div class="info-pair"><span class="label">Car:</span><span class="value">${car.make} ${car.model}</span></div>
+          <div class="info-pair"><span class="label">Start Date:</span><span class="value">${formatDate(car.startDate)}</span></div>
+          <div class="info-pair"><span class="label">End Date:</span><span class="value">${formatDate(car.endDate)}</span></div>
+          <div class="info-pair"><span class="label">Amount:</span><span class="value">₦${payment.amount}</span></div>
         `;
+
+        // Replace placeholders in template
+        emailHtml = emailHtml.replace('{{customer_name}}', user.name)
+                             .replace('{{customer_email}}', user.email || '')
+                             .replace('{{customer_phone}}', user.phoneNumber || '')
+                             .replace('{{car_details}}', carDetailsHtml)
+                             .replace('{{tx_ref}}', txRef)
+                             .replace('{{transaction_id}}', flutterwaveId)
+                             .replace('{{total_amount}}', payment.amount)
+                             .replace('&copy; 2025 Silas Car Rentals', `&copy; ${new Date().getFullYear()} TechyJaunt Car Rentals`);
 
         if (user.email) {
           await sendEmail(user.email, 'Rental Payment Confirmation - TechyJaunt', emailHtml);
