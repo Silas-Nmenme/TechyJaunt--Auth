@@ -13,6 +13,7 @@ const addCar = async (req, res) => {
     if (user.isAdmin !== true) {
       return res.status(403).json({ message: "Only admins can add cars" });
     }
+    console.log('req.file:', req.file); // Debug log
     // Create new car
     const newCar = new Car({
       make,
@@ -22,6 +23,7 @@ const addCar = async (req, res) => {
       description,
       color,
       brand,
+      image: req.file ? req.file.path : null,
     });
     await newCar.save();
 

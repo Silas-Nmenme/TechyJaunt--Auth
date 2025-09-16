@@ -18,13 +18,14 @@ const {
 } = require('../controller/payment.controller');
 
 const { isAuthenticated } = require('../middlewares/isAuth');
+const { upload } = require('../config/cloudinary');
 
 // Public routes
 router.get('/get-cars', getAllCars);
 router.get('/search-cars', searchCars);
 
 // Admin-protected routes
-router.post('/add-car', isAuthenticated, addCar);
+router.post('/add-car', isAuthenticated, upload.single('file'), addCar);
 router.put('/edit-car/:carId', isAuthenticated, editCar);
 router.delete('/delete-car/:carId', isAuthenticated, deleteCar);
 
