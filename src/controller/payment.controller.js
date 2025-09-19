@@ -155,12 +155,19 @@ exports.handleFlutterwaveWebhook = async (req, res) => {
         const templatePath = path.join(__dirname, '../../templates/receipt.html');
         let emailHtml = fs.readFileSync(templatePath, 'utf-8');
 
+        // Recalculate amounts for breakdown
+        const days = calculateDays(payment.startDate, payment.endDate);
+        const baseAmount = car.price * days;
+        const serviceFee = baseAmount * 0.25;
+        const taxes = baseAmount * 0.025;
+        const grandTotal = baseAmount + serviceFee + taxes;
+
         // Prepare car details HTML
         const carDetailsHtml = `
           <div class="info-pair"><span class="label">Car:</span><span class="value">${car.make} ${car.model}</span></div>
           <div class="info-pair"><span class="label">Start Date:</span><span class="value">${formatDate(car.startDate)}</span></div>
           <div class="info-pair"><span class="label">End Date:</span><span class="value">${formatDate(car.endDate)}</span></div>
-          <div class="info-pair"><span class="label">Amount:</span><span class="value">₦${payment.amount}</span></div>
+          <div class="info-pair"><span class="label">Base Rental Amount:</span><span class="value">₦${baseAmount}</span></div>
         `;
 
         // Replace placeholders in template
@@ -170,7 +177,10 @@ exports.handleFlutterwaveWebhook = async (req, res) => {
                              .replace('{{car_details}}', carDetailsHtml)
                              .replace('{{tx_ref}}', txRef)
                              .replace('{{transaction_id}}', flutterwaveId)
-                             .replace('{{total_amount}}', payment.amount)
+                             .replace('{{base_amount}}', baseAmount)
+                             .replace('{{service_fee}}', serviceFee)
+                             .replace('{{taxes}}', taxes)
+                             .replace('{{total_amount}}', grandTotal)
                              .replace('&copy; 2025 Silas Car Rentals', `&copy; ${new Date().getFullYear()} Silas Car Rentals`);
 
         if (user.email) {
