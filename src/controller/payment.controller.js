@@ -47,13 +47,19 @@ exports.makePayment = async (req, res) => {
     const days = calculateDays(startDate, endDate);
     const totalAmount = car.price * days;
 
+    // Calculate service fee (25% of total rental price) and taxes (2.5%)
+    const serviceFee = totalAmount * 0.25;
+    const taxes = totalAmount * 0.025;
+    const grandTotal = totalAmount + serviceFee + taxes;
+    console.log(`Total Amount: ${totalAmount}, Service Fee: ${serviceFee}, Taxes: ${taxes}, Grand Total: ${grandTotal}`);
+
     const tx_ref = `tx-${Date.now()}-${req.user._id}`;
 
     // Create pending payment record (without flutterwaveTransactionId)
     const paymentData = {
       user: req.user._id,
       car: carId,
-      amount: totalAmount,
+      amount: grandTotal,
       currency: 'NGN',
       tx_ref,
       status: 'pending',
@@ -67,7 +73,7 @@ exports.makePayment = async (req, res) => {
 
     const payload = {
       tx_ref,
-      amount: totalAmount,
+      amount: grandTotal,
       currency: 'NGN',
       redirect_url: "https://silascarrentals.netlify.app/payment-success.html",
       customer: {
