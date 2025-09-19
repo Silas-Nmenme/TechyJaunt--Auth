@@ -176,6 +176,11 @@
 
     <div class="section animate__animated animate__fadeInLeft" data-aos="fade-up" data-aos-delay="1100">
       <h3>Transaction Summary</h3>
+      <!-- Calculate service fee (25% of total rental price) and taxes (2.5%) -->
+      <!-- const serviceFee = totalAmount * 0.25; -->
+      <!-- const taxes = totalAmount * 0.025; -->
+      <!-- const grandTotal = totalAmount + serviceFee + taxes; -->
+      <!-- booking.totalAmount = grandTotal; // Update total amount to include fees and taxes -->
       <div class="info-pair animate__animated animate__slideInUp" data-aos="fade-right" data-aos-delay="1200"><span class="label">Transaction Ref:</span><span class="value">{{tx_ref}}</span></div>
       <div class="info-pair animate__animated animate__slideInUp" data-aos="fade-right" data-aos-delay="1300"><span class="label">Transaction ID:</span><span class="value">{{transaction_id}}</span></div>
       <div class="info-pair animate__animated animate__slideInUp" data-aos="fade-right" data-aos-delay="1400"><span class="label">Base Amount:</span><span class="value">₦{{base_amount}}</span></div>
