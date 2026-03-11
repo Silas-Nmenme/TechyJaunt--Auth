@@ -19,6 +19,13 @@ const {
   searchUsers,
   getStats
 } = require('../controller/user.controller');
+const { 
+  getUserOrders, 
+  getOrderById, 
+  getOrderStats, 
+  getOrderHistory, 
+  getActiveRentals 
+} = require('../controller/order.controller');
 const { isAuth, isAdmin } = require('../middlewares/auth');
 const { upload } = require('../config/cloudinary');
 const router = express.Router();
@@ -48,5 +55,12 @@ router.get('/profile', isAuth, getUserProfile);
 router.put('/profile', isAuth, updateProfile);
 router.post('/profile/picture', isAuth, upload.single('profilePicture'), uploadProfilePicture);
 router.delete('/profile/picture', isAuth, deleteProfilePicture);
+
+// Order/Rental management routes (protected)
+router.get('/orders', isAuth, getUserOrders);
+router.get('/orders/stats', isAuth, getOrderStats);
+router.get('/orders/history', isAuth, getOrderHistory);
+router.get('/orders/active', isAuth, getActiveRentals);
+router.get('/orders/:orderId', isAuth, getOrderById);
 
 module.exports = router
