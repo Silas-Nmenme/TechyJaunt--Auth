@@ -698,6 +698,33 @@ const uploadProfilePicture = async (req, res) => {
   }
 };
 
+// Get current authenticated user (for /api/auth/me endpoint)
+const getCurrentUser = async (req, res) => {
+  try {
+    const user = req.user;
+    
+    return res.status(200).json({
+      message: "User fetched successfully",
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        isAdmin: user.isAdmin,
+        isVerified: user.isVerified,
+        provider: user.provider,
+        phoneNumber: user.phoneNumber,
+        avatar: user.avatar,
+        profilePicture: user.profilePicture,
+        createdAt: user.createdAt,
+        updatedAt: user.updatedAt
+      }
+    });
+  } catch (error) {
+    console.error("Error getting current user:", error);
+    return res.status(500).json({ message: "Internal Server Error" });
+  }
+};
+
 // Get User Profile (including profile picture)
 const getUserProfile = async (req, res) => {
   try {
@@ -852,6 +879,7 @@ module.exports = {
   setPasswordForGoogleUser,
   uploadProfilePicture,
   getUserProfile,
+  getCurrentUser,
   deleteProfilePicture,
   updateProfile,
   getAllUsers,

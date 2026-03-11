@@ -10,8 +10,10 @@ dotenv.config();
 // Import DB connection & routes
 const connectDB = require("./src/config/db");
 const userRouter = require("./src/routes/user.routes");
+const authRouter = require("./src/routes/auth.routes");
 const carRouter = require("./src/routes/car.routes");
 const paymentRouter = require("./src/routes/payment.routes");
+const bookingRouter = require("./src/routes/booking.routes");
 const NewsletterRouter = require("./src/routes/Newsletter.routes");
 const contactRouter = require("./src/routes/contact.routes");
 
@@ -37,8 +39,10 @@ app.use(express.static(path.join(__dirname, "public")));
 // ===== API Routes =====
 app.get("/", (req, res) => res.send("Welcome To Silas Rental Services"));
 app.use("/api/users", userRouter);
+app.use("/api/auth", authRouter);
 app.use("/api/cars", carRouter);
 app.use("/api/payment", paymentRouter); // includes webhook inside payment.routes.js
+app.use("/api/bookings", bookingRouter);
 app.use("/api/newsletter", NewsletterRouter);
 app.use("/api", contactRouter); // Contact routes
 
