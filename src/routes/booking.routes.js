@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { getAllBookings, getUserBookings, getBookingStats } = require('../controller/booking.controller');
+const { getAllBookings, getUserBookings, getBookingStats, updateBooking } = require('../controller/booking.controller');
 const { isAuth, isAdmin } = require('../middlewares/auth');
 
 // Get all bookings (admin only)
@@ -11,6 +11,9 @@ router.get('/my-bookings', isAuth, getUserBookings);
 
 // Get booking stats (admin only)
 router.get('/stats', isAuth, isAdmin, getBookingStats);
+
+// Update a booking (cancel, update dates, update status)
+router.patch('/:id', isAuth, updateBooking);
 
 module.exports = router;
 
