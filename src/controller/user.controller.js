@@ -1,5 +1,7 @@
 
 const User = require("../models/user.schema");
+const Car = require("../models/car.schema");
+const Payment = require("../models/payment.schema");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const { v4: uuidv4 } = require("uuid");
@@ -241,14 +243,38 @@ const getStats = async (req, res) => {
     const googleUsers = await User.countDocuments({ provider: 'google' });
     const regularUsers = await User.countDocuments({ provider: 'local' });
 
-    return res.status(200).json({
+    // Build base response
+    const stats = {
       totalUsers,
       verifiedUsers,
       unverifiedUsers,
       adminUsers,
       googleUsers,
       regularUsers
-    });
+    };
+
+    // If user is admin, include additional stats
+    if (req.user && req.user.isAdmin) {
+      // Total Cars Listed
+      const totalCarsListed = await Car.countDocuments();
+      
+      // Total Revenue (sum of all successful payments)
+      const revenueResult = await Payment.aggregate([
+        { $match: { status: 'successful' } },
+        { $group: { _id: null, totalRevenue: { $sum: '$amount' } } }
+      ]);
+      const totalRevenue = revenueResult.length > 0 ? revenueResult[0].totalRevenue : 0;
+      
+      // Total Rentals (count of cars that have been rented)
+      const totalRentals = await Car.countDocuments({ isRented: true });
+
+      // Add admin stats to response
+      stats.totalCarsListed = totalCarsListed;
+      stats.totalRevenue = totalRevenue;
+      stats.totalRentals = totalRentals;
+    }
+
+    return res.status(200).json(stats);
   } catch (error) {
     console.error("Error fetching user stats:", error);
     return res.status(500).json({ message: "Internal Server Error" });

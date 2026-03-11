@@ -35,7 +35,7 @@ router.post('/verify-email/:token', verifyEmail);
 //Users 
 router.get('/get-users', isAuth, getAllUsers);
 router.get('/search-users', searchUsers);
-router.get('/stats', getStats);
+router.get('/stats', isAuth, getStats);
 
 // Server-side Google OAuth routes
 router.get('/google', initiateGoogleAuth);
