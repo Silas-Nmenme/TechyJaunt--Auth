@@ -16,7 +16,8 @@ const {
   deleteProfilePicture,
   updateProfile,
   getAllUsers,
-  searchUsers
+  searchUsers,
+  getStats
 } = require('../controller/user.controller');
 const { isAuth, isAdmin } = require('../middlewares/auth');
 const { upload } = require('../config/cloudinary');
@@ -34,6 +35,7 @@ router.post('/verify-email/:token', verifyEmail);
 //Users 
 router.get('/get-users', isAuth, getAllUsers);
 router.get('/search-users', searchUsers);
+router.get('/stats', getStats);
 
 // Server-side Google OAuth routes
 router.get('/google', initiateGoogleAuth);

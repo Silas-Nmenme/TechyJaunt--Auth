@@ -222,7 +222,7 @@ const searchUsers = async (req, res) => {
   try {
     const user = await User.find({ name: name });
     if (!user) {
-      return res.status(404).json({ message: "User not found"});
+      return res.status(404).json({ message: "User not found" });
     }
     return res.status(200).json({ user });
   } catch (err) {
@@ -230,6 +230,30 @@ const searchUsers = async (req, res) => {
     return res.status(500).json({ message: "Internal Server Error" });
   }
   };
+
+// Get User Stats
+const getStats = async (req, res) => {
+  try {
+    const totalUsers = await User.countDocuments();
+    const verifiedUsers = await User.countDocuments({ isVerified: true });
+    const unverifiedUsers = totalUsers - verifiedUsers;
+    const adminUsers = await User.countDocuments({ isAdmin: true });
+    const googleUsers = await User.countDocuments({ provider: 'google' });
+    const regularUsers = await User.countDocuments({ provider: 'local' });
+
+    return res.status(200).json({
+      totalUsers,
+      verifiedUsers,
+      unverifiedUsers,
+      adminUsers,
+      googleUsers,
+      regularUsers
+    });
+  } catch (error) {
+    console.error("Error fetching user stats:", error);
+    return res.status(500).json({ message: "Internal Server Error" });
+  }
+};
 
 //Forgot password
 const forgotPassword = async (req, res) => {
@@ -806,4 +830,5 @@ module.exports = {
   updateProfile,
   getAllUsers,
   searchUsers,
+  getStats,
 };
