@@ -146,7 +146,9 @@ exports.handleFlutterwaveWebhook = async (req, res) => {
 
       const user = await User.findById(payment.user);
       if (user) {
-        const sms = `Hi ${user.name}, your payment for ${car.make} ${car.model} was successful.\nRef: ${txRef}\nAmount: ₦${payment.amount}`;
+        // Build car description safely (car can be null)
+        const carMakeModel = (car && car.make && car.model) ? `${car.make} ${car.model}` : 'your rental';
+        const sms = `Hi ${user.name}, your payment for ${carMakeModel} was successful.\nRef: ${txRef}\nAmount: ₦${payment.amount}`;
         if (user.phoneNumber) {
           await sendSms(user.phoneNumber, sms, user._id);
         }
@@ -155,21 +157,31 @@ exports.handleFlutterwaveWebhook = async (req, res) => {
         const templatePath = path.join(__dirname, '../../templates/receipt.html');
         let emailHtml = fs.readFileSync(templatePath, 'utf-8');
 
-        // Recalculate amounts for breakdown
+        // Recalculate amounts for breakdown with null safety for car
         const days = calculateDays(payment.startDate, payment.endDate);
-        const baseAmount = car.price * days;
+        const baseAmount = (car && car.price) ? car.price * days : 0;
         const serviceFee = baseAmount * 0.25;
         const taxes = baseAmount * 0.025;
         const grandTotal = baseAmount + serviceFee + taxes;
 
-        // Prepare car details HTML
-        const carDetailsHtml = `
-          <div class="info-pair"><span class="label">Car:</span><span class="value">${car.make} ${car.model}</span></div>
-          <div class="info-pair"><span class="label">Rental Days:</span><span class="value">${days} day(s)</span></div>
-          <div class="info-pair"><span class="label">Start Date:</span><span class="value">${formatDate(car.startDate)}</span></div>
-          <div class="info-pair"><span class="label">End Date:</span><span class="value">${formatDate(car.endDate)}</span></div>
-          <div class="info-pair"><span class="label">Base Rental Amount:</span><span class="value">₦${baseAmount}</span></div>
-        `;
+        // Prepare car details HTML with null safety
+        let carDetailsHtml = '';
+        if (car && car.make && car.model) {
+          carDetailsHtml = `
+            <div class="info-pair"><span class="label">Car:</span><span class="value">${car.make} ${car.model}</span></div>
+            <div class="info-pair"><span class="label">Rental Days:</span><span class="value">${days} day(s)</span></div>
+            <div class="info-pair"><span class="label">Start Date:</span><span class="value">${formatDate(payment.startDate)}</span></div>
+            <div class="info-pair"><span class="label">End Date:</span><span class="value">${formatDate(payment.endDate)}</span></div>
+            <div class="info-pair"><span class="label">Base Rental Amount:</span><span class="value">₦${baseAmount}</span></div>
+          `;
+        } else {
+          carDetailsHtml = `
+            <div class="info-pair"><span class="label">Rental Days:</span><span class="value">${days} day(s)</span></div>
+            <div class="info-pair"><span class="label">Start Date:</span><span class="value">${formatDate(payment.startDate)}</span></div>
+            <div class="info-pair"><span class="label">End Date:</span><span class="value">${formatDate(payment.endDate)}</span></div>
+            <div class="info-pair"><span class="label">Base Rental Amount:</span><span class="value">₦${baseAmount}</span></div>
+          `;
+        }
 
         // Replace placeholders in template
         emailHtml = emailHtml.replace('{{customer_name}}', user.name)
@@ -182,17 +194,28 @@ exports.handleFlutterwaveWebhook = async (req, res) => {
                              .replace('{{service_fee}}', serviceFee)
                              .replace('{{taxes}}', taxes)
                              .replace('{{total_amount}}', grandTotal)
-                             .replace('&copy; 2025 Silas Car Rentals', `&copy; ${new Date().getFullYear()} Silas Car Rentals`);
+                             .replace('&copy; 2026 Silas Car Rentals', `&copy; ${new Date().getFullYear()} Silas Car Rentals`);
 
         // Use payment.email (from initial payment request) as primary, fallback to user.email
         const recipientEmail = payment.email || user.email;
+        
+        console.log(`Attempting to send receipt email to: ${recipientEmail}`);
+        console.log(`Payment email: ${payment.email}, User email: ${user.email}`);
+        
         if (recipientEmail) {
+          console.log(`Sending receipt to: ${recipientEmail}`);
           const emailResult = await sendEmail(recipientEmail, 'Rental Payment Confirmation - Silas Car Rentals', emailHtml);
+          
           if (!emailResult.success) {
             console.error('Failed to send receipt email:', emailResult.error);
+            // Log environment variables status (without exposing sensitive data)
+            console.error('Email config check - EMAIL_USER:', process.env.EMAIL_USER ? 'set' : 'NOT SET');
+            console.error('Email config check - EMAIL_PASS:', process.env.EMAIL_PASS ? 'set' : 'NOT SET');
+          } else {
+            console.log('Receipt email sent successfully to:', recipientEmail);
           }
         } else {
-          console.error('No email address available for sending receipt');
+          console.error('No email address available for sending receipt. Payment email:', payment.email, 'User email:', user.email);
         }
       }
 
@@ -209,3 +232,4 @@ exports.handleFlutterwaveWebhook = async (req, res) => {
     return res.status(500).json({ message: 'Internal Server Error' });
   }
 };
+
