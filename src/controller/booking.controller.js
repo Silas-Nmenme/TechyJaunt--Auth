@@ -8,16 +8,17 @@ const updateBooking = async (req, res) => {
     const bookingId = req.params.id;
     const { action, startDate, endDate, status } = req.body;
 
-    const payment = await Payment.findById(bookingId);
+    // FIXED: Use Booking model instead of Payment
+    const booking = await Booking.findById(bookingId);
     
-    if (!payment) {
+    if (!booking) {
       return res.status(404).json({ message: "Booking not found" });
     }
 
     // Check if user owns the booking or is admin
     const userId = req.user._id.toString();
     const isAdmin = req.user.isAdmin;
-    const isOwner = payment.user.toString() === userId;
+    const isOwner = booking.user.toString() === userId;
 
     if (!isOwner && !isAdmin) {
       return res.status(403).json({ message: "Not authorized to update this booking" });
@@ -26,11 +27,11 @@ const updateBooking = async (req, res) => {
     switch (action) {
       case 'cancel':
         // Cancel the booking
-        payment.status = 'cancelled';
-        await payment.save();
+        booking.status = 'cancelled';
+        await booking.save();
 
         // Update car status if it was rented
-        const car = await Car.findById(payment.car);
+        const car = await Car.findById(booking.car);
         if (car && car.isRented) {
           car.isRented = false;
           car.rentedBy = null;
@@ -43,7 +44,7 @@ const updateBooking = async (req, res) => {
 
         return res.status(200).json({ 
           message: "Booking cancelled successfully",
-          booking: payment 
+          booking: booking 
         });
 
       case 'updateDates':
@@ -59,12 +60,12 @@ const updateBooking = async (req, res) => {
           return res.status(400).json({ message: "End date must be after start date" });
         }
 
-        payment.startDate = newStartDate;
-        payment.endDate = newEndDate;
-        await payment.save();
+        booking.startDate = newStartDate;
+        booking.endDate = newEndDate;
+        await booking.save();
 
         // Update car dates
-        const carForDates = await Car.findById(payment.car);
+        const carForDates = await Car.findById(booking.car);
         if (carForDates) {
           carForDates.startDate = newStartDate;
           carForDates.endDate = newEndDate;
@@ -73,7 +74,7 @@ const updateBooking = async (req, res) => {
 
         return res.status(200).json({ 
           message: "Booking dates updated successfully",
-          booking: payment 
+          booking: booking 
         });
 
       case 'updateStatus':
@@ -86,12 +87,12 @@ const updateBooking = async (req, res) => {
           return res.status(400).json({ message: "Status is required" });
         }
 
-        payment.status = status;
-        await payment.save();
+        booking.status = status;
+        await booking.save();
 
         return res.status(200).json({ 
           message: "Booking status updated successfully",
-          booking: payment 
+          booking: booking 
         });
 
       default:
@@ -103,6 +104,7 @@ const updateBooking = async (req, res) => {
     return res.status(500).json({ message: "Internal Server Error" });
   }
 };
+
 
 // Get all bookings (for admin dashboard)
 const getAllBookings = async (req, res) => {
