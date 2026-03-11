@@ -165,6 +165,7 @@ exports.handleFlutterwaveWebhook = async (req, res) => {
         // Prepare car details HTML
         const carDetailsHtml = `
           <div class="info-pair"><span class="label">Car:</span><span class="value">${car.make} ${car.model}</span></div>
+          <div class="info-pair"><span class="label">Rental Days:</span><span class="value">${days} day(s)</span></div>
           <div class="info-pair"><span class="label">Start Date:</span><span class="value">${formatDate(car.startDate)}</span></div>
           <div class="info-pair"><span class="label">End Date:</span><span class="value">${formatDate(car.endDate)}</span></div>
           <div class="info-pair"><span class="label">Base Rental Amount:</span><span class="value">₦${baseAmount}</span></div>
@@ -177,7 +178,7 @@ exports.handleFlutterwaveWebhook = async (req, res) => {
                              .replace('{{car_details}}', carDetailsHtml)
                              .replace('{{tx_ref}}', txRef)
                              .replace('{{transaction_id}}', flutterwaveId)
-                             .replace('{{base_amount}}', baseAmount)
+                             .replace('{{rental_days}}', `${days} day(s)`)
                              .replace('{{service_fee}}', serviceFee)
                              .replace('{{taxes}}', taxes)
                              .replace('{{total_amount}}', grandTotal)
