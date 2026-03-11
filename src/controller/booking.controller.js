@@ -1,14 +1,15 @@
 const Payment = require('../models/payment.schema');
 const Car = require('../models/car.schema');
 const User = require('../models/user.schema');
+const Booking = require('../models/booking.schema');
 
-// Update a booking (cancel, update dates, etc.)
+// Update a booking (cancel, update dates, approve, reject, etc.)
 const updateBooking = async (req, res) => {
   try {
     const bookingId = req.params.id;
     const { action, startDate, endDate, status } = req.body;
 
-    // FIXED: Use Booking model instead of Payment
+    // Use the new Booking model
     const booking = await Booking.findById(bookingId);
     
     if (!booking) {
@@ -95,8 +96,52 @@ const updateBooking = async (req, res) => {
           booking: booking 
         });
 
+      case 'approve':
+        // Admin can approve a booking
+        if (!isAdmin) {
+          return res.status(403).json({ message: "Only admins can approve bookings" });
+        }
+
+        booking.status = 'approved';
+        booking.approvedBy = req.user._id;
+        booking.approvedAt = new Date();
+        await booking.save();
+
+        // Update car status to rented
+        const carToRent = await Car.findById(booking.car);
+        if (carToRent) {
+          carToRent.isRented = true;
+          carToRent.rentedBy = booking.user;
+          carToRent.startDate = booking.startDate;
+          carToRent.endDate = booking.endDate;
+          carToRent.totalPrice = booking.totalPrice;
+          carToRent.status = 'rented';
+          await carToRent.save();
+        }
+
+        return res.status(200).json({ 
+          message: "Booking approved successfully",
+          booking: booking 
+        });
+
+      case 'reject':
+        // Admin can reject a booking
+        if (!isAdmin) {
+          return res.status(403).json({ message: "Only admins can reject bookings" });
+        }
+
+        booking.status = 'rejected';
+        booking.rejectedBy = req.user._id;
+        booking.rejectedAt = new Date();
+        await booking.save();
+
+        return res.status(200).json({ 
+          message: "Booking rejected successfully",
+          booking: booking 
+        });
+
       default:
-        return res.status(400).json({ message: "Invalid action. Use 'cancel', 'updateDates', or 'updateStatus'" });
+        return res.status(400).json({ message: "Invalid action. Use 'cancel', 'updateDates', 'updateStatus', 'approve', or 'reject'" });
     }
 
   } catch (error) {
