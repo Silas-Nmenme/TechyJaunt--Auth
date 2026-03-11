@@ -1,17 +1,19 @@
 const nodemailer = require('nodemailer');
 
 const sendEmail = async (to, subject, html, text) => {
+  // Check required env vars
+  const {
+    EMAIL_USER,
+    EMAIL_PASS
+  } = process.env;
+
+  if (!EMAIL_USER || !EMAIL_PASS) {
+    const error = new Error("Missing required email environment variables.");
+    console.error(`Email send failed to ${to}:`, error.message);
+    return { success: false, error: error.message };
+  }
+
   try {
-    // Check required env vars
-    const {
-      EMAIL_USER,
-      EMAIL_PASS
-    } = process.env;
-
-    if (!EMAIL_USER || !EMAIL_PASS) {
-      throw new Error("Missing required email environment variables.");
-    }
-
     const transporter = nodemailer.createTransport({
       service: 'gmail',
       auth: {
@@ -30,8 +32,10 @@ const sendEmail = async (to, subject, html, text) => {
 
     await transporter.sendMail(mailOptions);
     console.log(`Email sent to: ${to}`);
+    return { success: true, message: 'Email sent successfully' };
   } catch (err) {
     console.error(`Email send failed to ${to}:`, err.message);
+    return { success: false, error: err.message };
   }
 };
 

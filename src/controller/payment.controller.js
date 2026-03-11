@@ -183,8 +183,15 @@ exports.handleFlutterwaveWebhook = async (req, res) => {
                              .replace('{{total_amount}}', grandTotal)
                              .replace('&copy; 2025 Silas Car Rentals', `&copy; ${new Date().getFullYear()} Silas Car Rentals`);
 
-        if (user.email) {
-          await sendEmail(user.email, 'Rental Payment Confirmation - Silas Car Rentals', emailHtml);
+        // Use payment.email (from initial payment request) as primary, fallback to user.email
+        const recipientEmail = payment.email || user.email;
+        if (recipientEmail) {
+          const emailResult = await sendEmail(recipientEmail, 'Rental Payment Confirmation - Silas Car Rentals', emailHtml);
+          if (!emailResult.success) {
+            console.error('Failed to send receipt email:', emailResult.error);
+          }
+        } else {
+          console.error('No email address available for sending receipt');
         }
       }
 
