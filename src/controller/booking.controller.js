@@ -16,7 +16,7 @@ const updateBooking = async (req, res) => {
 
     // Check if user owns the booking or is admin
     const userId = req.user._id.toString();
-    const isAdmin = req.user.role === 'admin';
+    const isAdmin = req.user.isAdmin;
     const isOwner = payment.user.toString() === userId;
 
     if (!isOwner && !isAdmin) {
