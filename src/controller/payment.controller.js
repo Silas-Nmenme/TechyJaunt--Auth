@@ -130,6 +130,8 @@ exports.handleFlutterwaveWebhook = async (req, res) => {
       // Update payment record safely
       payment.status = 'successful';
       payment.flutterwaveTransactionId = flutterwaveId;
+      // Capture payment method from Flutterwave webhook
+      payment.paymentMethod = event.data.payment_type || event.data.payment_method || 'card';
       await payment.save();
 
       // Update car status

@@ -88,7 +88,9 @@ const getOrderById = async (req, res) => {
           rejectedBy: booking.rejectedBy,
           approvedAt: booking.approvedAt,
           rejectedAt: booking.rejectedAt
-        } : null
+        } : null,
+        transactionId: order.flutterwaveTransactionId || null,
+        paymentMethod: order.paymentMethod || 'N/A'
       }
     });
   } catch (error) {

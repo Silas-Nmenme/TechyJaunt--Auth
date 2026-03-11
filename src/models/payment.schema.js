@@ -52,6 +52,10 @@ const paymentSchema = new mongoose.Schema({
     unique: true,
     sparse: true,
     default: undefined  // Important! Prevents Mongoose from setting `null`
+  },
+  paymentMethod: {
+    type: String,
+    default: null
   }
 }, {
   timestamps: true,
