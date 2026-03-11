@@ -265,8 +265,8 @@ const getStats = async (req, res) => {
       ]);
       const totalRevenue = revenueResult.length > 0 ? revenueResult[0].totalRevenue : 0;
       
-      // Total Rentals (count of cars that have been rented)
-      const totalRentals = await Car.countDocuments({ isRented: true });
+      // Total Rentals (count of all successful payment transactions)
+      const totalRentals = await Payment.countDocuments({ status: 'successful' });
 
       // Add admin stats to response
       stats.totalCarsListed = totalCarsListed;
